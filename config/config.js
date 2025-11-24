@@ -22,5 +22,11 @@ module.exports = {
     title: process.env.API_TITLE || 'Quran API',
     version: process.env.API_VERSION || '1.0.0',
     description: process.env.API_DESCRIPTION || 'API for Quran management system'
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key',
+    refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key',
+    accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '1d',
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30m'
   }
 };
