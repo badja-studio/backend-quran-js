@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: quran-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: quran_user
+      POSTGRES_PASSWORD: quran_password
+      POSTGRES_DB: quran_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - quran-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quran_user -d quran_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: quran-backend-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: quran_db
+      DB_USER: quran_user
+      DB_PASSWORD: quran_password
+      API_TITLE: Quran API
+      API_VERSION: 1.0.0
+      API_DESCRIPTION: API for Quran management system
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - quran-network
+
+volumes:
+  postgres_data:
+
+networks:
+  quran-network:
+    driver: bridge
