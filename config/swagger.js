@@ -26,6 +26,10 @@ const options = {
     ],
     tags: [
       {
+        name: 'Authentication',
+        description: 'User authentication endpoints (register, login, refresh token)'
+      },
+      {
         name: 'Surahs',
         description: 'Surah management endpoints'
       },
@@ -33,7 +37,17 @@ const options = {
         name: 'Health',
         description: 'Health check endpoints'
       }
-    ]
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Enter your JWT access token'
+        }
+      }
+    }
   },
   apis: [
     './internal/controller/*.js',
