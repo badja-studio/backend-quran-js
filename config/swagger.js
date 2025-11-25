@@ -22,6 +22,10 @@ const options = {
       {
         url: 'https://api.quran.com',
         description: 'Production server'
+      },
+      {
+        url: 'https://api-quran.kancralabs.com/',
+        description: 'Staging server'
       }
     ],
     tags: [
