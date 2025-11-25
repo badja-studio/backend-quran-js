@@ -29,6 +29,15 @@ class AuthRepository {
     }
 
     /**
+     * Find user by siagaNumber
+     * @param {string} siagaNumber
+     * @returns {Promise<User|null>}
+     */
+    async findBySiagaNumber(siagaNumber) {
+        return await User.findOne({ where: { siagaNumber } });
+    }
+
+    /**
      * Find user by ID
      * @param {string} id
      * @returns {Promise<User|null>}

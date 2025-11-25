@@ -8,6 +8,11 @@ const User = sequelize.define('User', {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
+    siagaNumber: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        index: true
+    },
     email: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -33,10 +38,22 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    phoneNumber: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    schoolLevels: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    levels: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     roles: {
-        type: DataTypes.ENUM('Admin', 'Teacher', 'Student'),
+        type: DataTypes.ENUM('Admin', 'Assessor', 'Assessee'),
         allowNull: false,
-        defaultValue: 'Student'
+        defaultValue: 'Assessee'
     }
 }, {
     tableName: 'users',
