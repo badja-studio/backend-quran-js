@@ -3,6 +3,17 @@ const { randomUUID } = require('crypto');
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // Check if schedules already exist
+    const existingSchedules = await queryInterface.sequelize.query(
+      `SELECT COUNT(*) as count FROM schedules`,
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+
+    if (existingSchedules[0].count > 0) {
+      console.log('⏭️  Schedules already exist, skipping seed...');
+      return;
+    }
+
     const now = new Date();
     
     // Create schedules for the next 7 days

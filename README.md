@@ -64,22 +64,43 @@ backend-quran-js/
 
 ## 🐳 Docker Setup
 
+### Quick Start with Just (Recommended)
+
+Install [just](https://github.com/casey/just) command runner, then:
+
+```bash
+# Start development
+just dev-up-d
+
+# Seed database (after containers are running)
+just db-seed
+
+# View all commands
+just --list
+```
+
+See [COMMANDS.md](COMMANDS.md) for complete command reference.
+
 ### Development (dengan PostgreSQL)
 ```bash
 # Jalankan dengan PostgreSQL included
-docker-compose -f docker-compose.dev.yml up
+docker-compose -f docker-compose.dev.yml up -d
+
+# Tunggu container siap, lalu seed database
+docker-compose -f docker-compose.dev.yml exec app npm run db:seed
+
+# View logs
+docker-compose -f docker-compose.dev.yml logs -f
 
 # Stop services
 docker-compose -f docker-compose.dev.yml down
-
-# Rebuild containers
-docker-compose -f docker-compose.dev.yml up --build
 ```
 
 Development environment sudah include:
 - PostgreSQL container
 - Hot reload dengan nodemon
 - Volume mounting untuk development
+- **Seeding manual** - tidak otomatis saat startup
 
 ### Production (database eksternal)
 ```bash
@@ -90,6 +111,9 @@ cp .env.production.example .env.production
 # Jalankan dengan environment file
 docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
 
+# Run migrations if needed
+docker-compose -f docker-compose.prod.yml exec app npm run db:migrate
+
 # Stop services
 docker-compose -f docker-compose.prod.yml down
 ```
@@ -98,6 +122,7 @@ Production environment:
 - Menggunakan database eksternal (by environment variables)
 - Optimized image size
 - Production dependencies only
+- **No auto-seeding** - aman untuk production
 
 ## 📦 Installation (Tanpa Docker)
 
@@ -193,11 +218,14 @@ Struktur sudah mendukung multiple entry points di folder `cmd/`.
 
 ## 📝 Notes
 
+- **Seeding tidak otomatis** - jalankan manual dengan `just db-seed` atau `npm run db:seed`
+- Seeders sudah dilengkapi dengan duplicate check - aman dijalankan berkali-kali
 - Database sync dilakukan otomatis di development mode
 - Production menggunakan migrations (setup via sequelize-cli)
 - Semua business logic harus di UseCase layer
 - Repository hanya untuk database operations
 - Controller hanya untuk HTTP handling
+- Docker files bersih dari auto-migration dan auto-seeding
 
 ## 🤝 Contributing
 

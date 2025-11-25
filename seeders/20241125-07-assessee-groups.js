@@ -3,6 +3,17 @@ const { randomUUID } = require('crypto');
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // Check if relationships already exist
+    const existingRelationships = await queryInterface.sequelize.query(
+      `SELECT COUNT(*) as count FROM assessee_groups`,
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+
+    if (existingRelationships[0].count > 0) {
+      console.log('⏭️  Assessee-Groups relationships already exist, skipping seed...');
+      return;
+    }
+
     const now = new Date();
 
     // Get assessees from database

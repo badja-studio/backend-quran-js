@@ -3,6 +3,17 @@ const { randomUUID } = require('crypto');
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // Check if criteria groups already exist
+    const existingGroups = await queryInterface.sequelize.query(
+      `SELECT COUNT(*) as count FROM criteria_groups`,
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+
+    if (existingGroups[0].count > 0) {
+      console.log('⏭️  Criteria groups already exist, skipping seed...');
+      return;
+    }
+
     const now = new Date();
 
     const tajwidId = randomUUID();

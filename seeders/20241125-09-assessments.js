@@ -3,6 +3,17 @@ const { randomUUID } = require('crypto');
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // Check if assessments already exist
+    const existingAssessments = await queryInterface.sequelize.query(
+      `SELECT COUNT(*) as count FROM assessments`,
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+
+    if (existingAssessments[0].count > 0) {
+      console.log('⏭️  Assessments already exist, skipping seed...');
+      return;
+    }
+
     const now = new Date();
 
     // Get assessees and assessors

@@ -4,6 +4,17 @@ const { randomUUID } = require('crypto');
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // Check if users already exist
+    const existingUsers = await queryInterface.sequelize.query(
+      `SELECT email FROM users WHERE email IN ('admin@quran.id', 'assessor1@quran.id', 'assessor2@quran.id', 'assessee1@quran.id', 'assessee2@quran.id', 'assessee3@quran.id')`,
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+
+    if (existingUsers.length > 0) {
+      console.log('⏭️  Users already exist, skipping seed...');
+      return;
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash('password123', salt);
     const now = new Date();

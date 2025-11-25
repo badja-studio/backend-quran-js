@@ -2,6 +2,17 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // Check if surahs already exist
+    const existingSurahs = await queryInterface.sequelize.query(
+      `SELECT COUNT(*) as count FROM surahs`,
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+
+    if (existingSurahs[0].count > 0) {
+      console.log('⏭️  Surahs already exist, skipping seed...');
+      return;
+    }
+
     const now = new Date();
     
     const surahs = [
