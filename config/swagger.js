@@ -55,7 +55,8 @@ const options = {
   },
   apis: [
     './internal/controller/*.js',
-    './internal/routes/*.js'
+    './internal/routes/*.js',
+    './internal/swagger/*.js'
   ]
 };
 
