@@ -50,6 +50,16 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: true
     },
+    district: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Kabupaten/Kotamadya'
+    },
+    waLink: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'WhatsApp link for Assessor'
+    },
     roles: {
         type: DataTypes.ENUM('Admin', 'Assessor', 'Assessee'),
         allowNull: false,
