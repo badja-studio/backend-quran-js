@@ -12,7 +12,11 @@ const authUseCase = require('../usecase/auth.usecase');
  *         - username
  *         - name
  *         - fullname
+ *         - siagaNumber
  *       properties:
+ *         siagaNumber:
+ *           type: string
+ *           example: "12345678"
  *         email:
  *           type: string
  *           format: email
@@ -30,19 +34,32 @@ const authUseCase = require('../usecase/auth.usecase');
  *         fullname:
  *           type: string
  *           example: John Doe
+ *         phoneNumber:
+ *           type: string
+ *           example: "+62812345678"
+ *         schoolLevels:
+ *           type: string
+ *           example: "SMA"
+ *         levels:
+ *           type: string
+ *           example: "Beginner"
  *         roles:
  *           type: string
- *           enum: [Admin, Teacher, Student]
- *           example: Student
+ *           enum: [Admin, Assessor, Assessee]
+ *           example: Assessee
  *     LoginRequest:
  *       type: object
  *       required:
- *         - emailOrUsername
  *         - password
  *       properties:
  *         emailOrUsername:
  *           type: string
  *           example: john.doe@example.com
+ *           description: Email or username (required if siagaNumber is not provided)
+ *         siagaNumber:
+ *           type: string
+ *           example: "12345678"
+ *           description: Siaga number (required if emailOrUsername is not provided)
  *         password:
  *           type: string
  *           format: password

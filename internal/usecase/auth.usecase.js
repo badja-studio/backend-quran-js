@@ -44,14 +44,25 @@ class AuthUseCase {
     async register(userData) {
         try {
             // Validate required fields
-            const { email, password, username, name, fullname, roles } = userData;
+            const { 
+                email, 
+                password, 
+                username, 
+                name, 
+                fullname, 
+                siagaNumber,
+                phoneNumber,
+                schoolLevels,
+                levels,
+                roles 
+            } = userData;
 
-            if (!email || !password || !username || !name || !fullname) {
-                throw new Error('All fields are required: email, password, username, name, fullname');
+            if (!email || !password || !username || !name || !fullname || !siagaNumber) {
+                throw new Error('All fields are required: email, password, username, name, fullname, siagaNumber');
             }
 
             // Validate role
-            const validRoles = ['Admin', 'Teacher', 'Student'];
+            const validRoles = ['Admin', 'Assessor', 'Assessee'];
             if (roles && !validRoles.includes(roles)) {
                 throw new Error(`Invalid role. Must be one of: ${validRoles.join(', ')}`);
             }
@@ -68,6 +79,12 @@ class AuthUseCase {
                 throw new Error('Username already taken');
             }
 
+            // Check if siagaNumber already exists
+            const existingSiagaNumber = await authRepository.findBySiagaNumber(siagaNumber);
+            if (existingSiagaNumber) {
+                throw new Error('Siaga number already registered');
+            }
+
             // Create user
             const user = await authRepository.createUser({
                 email,
@@ -75,7 +92,11 @@ class AuthUseCase {
                 username,
                 name,
                 fullname,
-                roles: roles || 'Student'
+                siagaNumber,
+                phoneNumber: phoneNumber || null,
+                schoolLevels: schoolLevels || null,
+                levels: levels || null,
+                roles: roles || 'Assessee'
             });
 
             // Generate tokens
@@ -92,6 +113,10 @@ class AuthUseCase {
                         username: user.username,
                         name: user.name,
                         fullname: user.fullname,
+                        siagaNumber: user.siagaNumber,
+                        phoneNumber: user.phoneNumber,
+                        schoolLevels: user.schoolLevels,
+                        levels: user.levels,
                         roles: user.roles
                     },
                     token: authToken, // For compatibility
@@ -109,21 +134,35 @@ class AuthUseCase {
 
     /**
      * Login user
-     * @param {Object} credentials - Login credentials (email/username and password)
+     * @param {Object} credentials - Login credentials (email/username/siagaNumber and password)
      * @returns {Promise<Object>} Login result with tokens
      */
     async login(credentials) {
         try {
             const { emailOrUsername, password, siagaNumber } = credentials;
 
-            if (!emailOrUsername || !password || !siagaNumber) {
-                throw new Error('Email/Username and password are required');
+            // Check if we have either emailOrUsername or siagaNumber
+            if (!password) {
+                throw new Error('Password is required');
             }
 
-            // Find user by email or username
-            let user = await authRepository.findByEmail(emailOrUsername);
-            if (!user) {
-                user = await authRepository.findByUsername(emailOrUsername);
+            if (!emailOrUsername && !siagaNumber) {
+                throw new Error('Email, username, or siaga number is required');
+            }
+
+            let user = null;
+
+            // If siagaNumber is provided, prioritize it
+            if (siagaNumber) {
+                user = await authRepository.findBySiagaNumber(siagaNumber);
+            }
+
+            // If user not found and emailOrUsername is provided, try email/username
+            if (!user && emailOrUsername) {
+                user = await authRepository.findByEmail(emailOrUsername);
+                if (!user) {
+                    user = await authRepository.findByUsername(emailOrUsername);
+                }
             }
 
             if (!user) {
