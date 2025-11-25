@@ -56,6 +56,7 @@ const authenticateToken = async (req, res, next) => {
     }
 };
 
+
 /**
  * Middleware to check if user has specific role
  * @param {string[]} allowedRoles - Array of allowed roles
@@ -80,7 +81,31 @@ const authorizeRoles = (...allowedRoles) => {
     };
 };
 
+/**
+ * Middleware to check if user is Admin
+ */
+const isAdmin = (req, res, next) => {
+    return authorizeRoles('Admin')(req, res, next);
+};
+
+/**
+ * Middleware to check if user is Assessor
+ */
+const isAssessor = (req, res, next) => {
+    return authorizeRoles('Assessor')(req, res, next);
+};
+
+/**
+ * Middleware to check if user is Assessee
+ */
+const isAssessee = (req, res, next) => {
+    return authorizeRoles('Assessee')(req, res, next);
+};
+
 module.exports = {
     authenticateToken,
-    authorizeRoles
+    authorizeRoles,
+    isAdmin,
+    isAssessor,
+    isAssessee
 };
