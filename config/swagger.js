@@ -2,6 +2,47 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const config = require('./config');
 const path = require('path');
+const fs = require('fs');
+
+// Recursively get all JS files from a directory
+const getAllJsFiles = (dir) => {
+  let results = [];
+  if (!fs.existsSync(dir)) return results;
+  
+  const list = fs.readdirSync(dir);
+  list.forEach(file => {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+    if (stat && stat.isDirectory()) {
+      results = results.concat(getAllJsFiles(filePath));
+    } else if (file.endsWith('.js')) {
+      results.push(filePath);
+    }
+  });
+  return results;
+};
+
+// Get all API files
+const getApiFiles = () => {
+  const basePath = path.join(__dirname, '..');
+  const dirs = [
+    path.join(basePath, 'internal', 'controller'),
+    path.join(basePath, 'internal', 'routes'),
+    path.join(basePath, 'internal', 'swagger')
+  ];
+  
+  let files = [];
+  dirs.forEach(dir => {
+    files = files.concat(getAllJsFiles(dir));
+  });
+  
+  console.log('📁 Swagger scanning directories:', dirs);
+  console.log('📄 Found files:', files);
+  
+  return files;
+};
+
+const apiFiles = getApiFiles();
 
 const options = {
   definition: {
@@ -35,6 +76,38 @@ const options = {
         description: 'User authentication endpoints (register, login, refresh token)'
       },
       {
+        name: 'Admin',
+        description: 'Admin management endpoints (manage users, criteria, schedules)'
+      },
+      {
+        name: 'Admin - Criteria Groups',
+        description: 'Manage criteria groups (Admin only)'
+      },
+      {
+        name: 'Admin - Criteria',
+        description: 'Manage individual criteria (Admin only)'
+      },
+      {
+        name: 'Admin - Schedules',
+        description: 'Manage assessment schedules (Admin only)'
+      },
+      {
+        name: 'Admin - Assessees',
+        description: 'Manage assessees (Admin only)'
+      },
+      {
+        name: 'Admin - Assessors',
+        description: 'Manage assessors (Admin only)'
+      },
+      {
+        name: 'Assessor',
+        description: 'Assessor endpoints (view assessees, submit assessments)'
+      },
+      {
+        name: 'Assessee',
+        description: 'Assessee endpoints (view profile, schedule, assessments)'
+      },
+      {
         name: 'Surahs',
         description: 'Surah management endpoints'
       },
@@ -54,11 +127,7 @@ const options = {
       }
     }
   },
-  apis: [
-    path.join(__dirname, '../internal/controller/**/*.js'),
-    path.join(__dirname, '../internal/routes/**/*.js'),
-    path.join(__dirname, '../internal/swagger/**/*.js')
-  ]
+  apis: apiFiles
 };
 
 const specs = swaggerJsdoc(options);
