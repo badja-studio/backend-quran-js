@@ -28,5 +28,12 @@ module.exports = {
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key',
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '1d',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30m'
+  },
+  cors: {
+    // Parse allowed origins from environment variable (comma-separated)
+    // Example: CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+    allowedOrigins: process.env.CORS_ALLOWED_ORIGINS 
+      ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+      : ['*'] // Default to allow all
   }
 };

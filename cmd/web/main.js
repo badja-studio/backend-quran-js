@@ -11,7 +11,28 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+
+// CORS configuration
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow all origins if '*' is in the allowed origins
+    if (config.cors.allowedOrigins.includes('*')) {
+      callback(null, true);
+    } 
+    // Allow if origin is in the allowed list
+    else if (config.cors.allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } 
+    // Reject if origin is not allowed
+    else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(morgan(config.env === 'development' ? 'dev' : 'combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
