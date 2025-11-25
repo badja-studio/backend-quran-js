@@ -11,8 +11,11 @@ RUN npm install
 # Copy application files
 COPY . .
 
+# Make entrypoint script executable
+RUN chmod +x docker-entrypoint.sh
+
 # Expose port
 EXPOSE 3000
 
-# Start application in development mode
-CMD ["npm", "run", "dev"]
+# Use entrypoint script
+ENTRYPOINT ["./docker-entrypoint.sh"]
