@@ -10,7 +10,7 @@ const User = sequelize.define('User', {
     },
     siagaNumber: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
         index: true
     },
     email: {

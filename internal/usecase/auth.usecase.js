@@ -114,9 +114,9 @@ class AuthUseCase {
      */
     async login(credentials) {
         try {
-            const { emailOrUsername, password } = credentials;
+            const { emailOrUsername, password, siagaNumber } = credentials;
 
-            if (!emailOrUsername || !password) {
+            if (!emailOrUsername || !password || !siagaNumber) {
                 throw new Error('Email/Username and password are required');
             }
 
