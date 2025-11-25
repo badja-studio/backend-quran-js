@@ -1,7 +1,50 @@
 const adminUseCase = require('../usecase/admin.usecase');
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Admin - Criteria Groups
+ *     description: Manage criteria groups (Admin only)
+ *   - name: Admin - Criteria
+ *     description: Manage individual criteria (Admin only)
+ *   - name: Admin - Schedules
+ *     description: Manage assessment schedules (Admin only)
+ *   - name: Admin - Assessees
+ *     description: Manage assessees (Admin only)
+ *   - name: Admin - Assessors
+ *     description: Manage assessors (Admin only)
+ */
+
 class AdminController {
     // ==================== CRITERIA GROUP ENDPOINTS ====================
+    
+    /**
+     * @swagger
+     * /api/v1/admin/criteria-groups:
+     *   post:
+     *     summary: Create criteria group
+     *     tags: [Admin - Criteria Groups]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - name
+     *             properties:
+     *               name:
+     *                 type: string
+     *                 example: "Penilaian Hafalan Quran"
+     *               description:
+     *                 type: string
+     *                 example: "Kriteria penilaian untuk hafalan Al-Quran"
+     *     responses:
+     *       201:
+     *         description: Criteria group created successfully
+     */
     
     async createCriteriaGroup(req, res) {
         try {
