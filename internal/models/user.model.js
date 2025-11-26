@@ -46,6 +46,10 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: true
     },
+    schoolName: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     levels: {
         type: DataTypes.STRING,
         allowNull: true
