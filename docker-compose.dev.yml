@@ -28,10 +28,10 @@ services:
     container_name: quran-backend-dev
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3012:3012"
     environment:
       NODE_ENV: development
-      PORT: 3000
+      PORT: 3012
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: quran_db
