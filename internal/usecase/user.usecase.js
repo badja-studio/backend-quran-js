@@ -2,38 +2,59 @@ const userRepository = require('../repository/user.repository');
 
 class UserUseCase {
     /**
-     * Get all users with pagination
+     * Get all users with pagination, search and sorting
      * @param {number} page - Page number (1-indexed)
      * @param {number} limit - Number of items per page
      * @param {string} search - Optional search query
+     * @param {string} sortBy - Field to sort by
+     * @param {string} sortOrder - Sort order (ASC or DESC)
      * @returns {Promise<Object>} Paginated users response
      */
-    async getAllUsers(page = 1, limit = 10, search = '') {
+    async getAllUsers(page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC') {
         try {
-            // Validate pagination parameters
-            const validatedPage = Math.max(1, parseInt(page) || 1);
-            const validatedLimit = Math.min(100, Math.max(1, parseInt(limit) || 10));
+            const { User } = require('../models');
+            const { Op } = require('sequelize');
+            
+            const offset = (page - 1) * limit;
+            const parsedLimit = parseInt(limit);
+            const currentPage = parseInt(page);
 
-            const { rows: users, count: total } = await userRepository.getAllUsers(
-                validatedPage,
-                validatedLimit,
-                search
-            );
+            // Build search conditions
+            const searchConditions = search ? {
+                [Op.or]: [
+                    { name: { [Op.iLike]: `%${search}%` } },
+                    { fullname: { [Op.iLike]: `%${search}%` } },
+                    { email: { [Op.iLike]: `%${search}%` } },
+                    { username: { [Op.iLike]: `%${search}%` } },
+                    { siagaNumber: { [Op.iLike]: `%${search}%` } },
+                    { accountNumber: { [Op.iLike]: `%${search}%` } },
+                    { nip: { [Op.iLike]: `%${search}%` } }
+                ]
+            } : {};
 
-            const totalPages = Math.ceil(total / validatedLimit);
+            const { count, rows } = await User.findAndCountAll({
+                where: searchConditions,
+                attributes: { exclude: ['password'] },
+                limit: parsedLimit,
+                offset: offset,
+                order: [[sortBy, sortOrder.toUpperCase()]],
+                distinct: true
+            });
+
+            const totalPages = Math.ceil(count / parsedLimit);
 
             return {
                 success: true,
                 message: 'Users retrieved successfully',
                 data: {
-                    users,
+                    users: rows,
                     pagination: {
-                        total,
-                        page: validatedPage,
-                        limit: validatedLimit,
+                        total: count,
+                        page: currentPage,
+                        limit: parsedLimit,
                         totalPages,
-                        hasNext: validatedPage < totalPages,
-                        hasPrevious: validatedPage > 1
+                        hasNext: currentPage < totalPages,
+                        hasPrevious: currentPage > 1
                     }
                 }
             };

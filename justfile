@@ -80,6 +80,16 @@ db-fresh:
     docker-compose -f docker-compose.dev.yml exec app npm run db:seed
     @echo "✅ Fresh database ready!"
 
+# Inject test data (15 assessee with different statuses)
+db-test:
+    @echo "📊 Injecting test data..."
+    docker-compose -f docker-compose.dev.yml exec app npx sequelize-cli db:seed --seed 20241127-test-data.js
+    @echo "✅ Test data injected!"
+    @echo "   - 5 assessee BELUM ASESMEN (TST001-TST005)"
+    @echo "   - 5 assessee SIAP ASESMEN (TST006-TST010)"
+    @echo "   - 5 assessee DENGAN HASIL (TST011-TST015)"
+
+
 # ========================================
 # Local Development (without Docker)
 # ========================================

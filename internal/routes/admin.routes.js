@@ -24,6 +24,9 @@ router.post('/schedules/:id/add-assessees', adminController.addAssesseesToSchedu
 router.delete('/schedules/:scheduleId/assessees/:assesseeId', adminController.removeAssesseeFromSchedule);
 
 // Assessee Routes
+router.get('/assessees/not-assessed', adminController.getAssesseesNotAssessed);
+router.get('/assessees/ready-for-assessment', adminController.getAssesseesReadyForAssessment);
+router.get('/assessees/with-results', adminController.getAssesseesWithResults);
 router.get('/assessees', adminController.getAllAssessees);
 router.get('/assessees/:id', adminController.getAssesseeById);
 router.post('/assessees/:id/assign-assessor', adminController.assignAssessorToAssessee);

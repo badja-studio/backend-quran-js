@@ -123,8 +123,8 @@ class UserController {
      */
     async getAllUsers(req, res) {
         try {
-            const { page = 1, limit = 10, search = '' } = req.query;
-            const result = await userUseCase.getAllUsers(page, limit, search);
+            const { page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+            const result = await userUseCase.getAllUsers(page, limit, search, sortBy, sortOrder);
 
             const statusCode = result.success ? 200 : 400;
             return res.status(statusCode).json(result);
