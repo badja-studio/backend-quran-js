@@ -268,7 +268,50 @@ class AdminController {
     
     async getAllAssessees(req, res) {
         try {
-            const result = await adminUseCase.getAllAssessees();
+            const { page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+            const result = await adminUseCase.getAllAssessees(page, limit, search, sortBy, sortOrder);
+            return res.status(200).json(result);
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Internal server error',
+                error: error.message
+            });
+        }
+    }
+
+    async getAssesseesNotAssessed(req, res) {
+        try {
+            const { page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+            const result = await adminUseCase.getAssesseesNotAssessed(page, limit, search, sortBy, sortOrder);
+            return res.status(200).json(result);
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Internal server error',
+                error: error.message
+            });
+        }
+    }
+
+    async getAssesseesReadyForAssessment(req, res) {
+        try {
+            const { page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+            const result = await adminUseCase.getAssesseesReadyForAssessment(page, limit, search, sortBy, sortOrder);
+            return res.status(200).json(result);
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Internal server error',
+                error: error.message
+            });
+        }
+    }
+
+    async getAssesseesWithResults(req, res) {
+        try {
+            const { page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+            const result = await adminUseCase.getAssesseesWithResults(page, limit, search, sortBy, sortOrder);
             return res.status(200).json(result);
         } catch (error) {
             return res.status(500).json({

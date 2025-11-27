@@ -42,6 +42,37 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: true
     },
+    accountNumber: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+        comment: 'No. Akun'
+    },
+    nip: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Nomor Induk Pegawai'
+    },
+    gender: {
+        type: DataTypes.ENUM('L', 'P'),
+        allowNull: true,
+        comment: 'Jenis Kelamin: L=Laki-laki, P=Perempuan'
+    },
+    birthPlace: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Tempat Lahir'
+    },
+    position: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Jabatan/Pegawai'
+    },
+    province: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Provinsi'
+    },
     schoolLevels: {
         type: DataTypes.STRING,
         allowNull: true
@@ -58,6 +89,31 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: true,
         comment: 'Kabupaten/Kotamadya'
+    },
+    education: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Pendidikan Terakhir (D3, S1, S2, S3)'
+    },
+    studyProgram: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Program Studi'
+    },
+    university: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Perguruan Tinggi'
+    },
+    universityType: {
+        type: DataTypes.ENUM('Negeri', 'Swasta'),
+        allowNull: true,
+        comment: 'Jenis Perguruan Tinggi'
+    },
+    graduationYear: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Tahun Lulus'
     },
     waLink: {
         type: DataTypes.STRING,

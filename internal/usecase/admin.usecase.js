@@ -5,6 +5,7 @@ const assesseeAssessorRepo = require('../repository/assesseeAssessor.repository'
 const assesseeGroupRepo = require('../repository/assesseeGroup.repository');
 const assessmentRepo = require('../repository/assessment.repository');
 const authRepo = require('../repository/auth.repository');
+const assesseeRepo = require('../repository/assessee.repository');
 
 class AdminUseCase {
     // ==================== CRITERIA GROUP MANAGEMENT ====================
@@ -331,25 +332,101 @@ class AdminUseCase {
 
     // ==================== ASSESSEE MANAGEMENT ====================
     
-    async getAllAssessees() {
+    async getAllAssessees(page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC') {
         try {
-            const { User } = require('../models');
-            const assessees = await User.findAll({
-                where: { roles: 'Assessee' },
-                attributes: { exclude: ['password'] },
-                include: [
-                    {
-                        model: User,
-                        as: 'assessors',
-                        attributes: ['id', 'name', 'fullname', 'waLink'],
-                        through: { attributes: [] }
-                    }
-                ]
+            const result = await assesseeRepo.findWithPagination({
+                page,
+                limit,
+                search,
+                sortBy,
+                sortOrder
             });
 
             return {
                 success: true,
-                data: assessees
+                message: 'Assessees retrieved successfully',
+                data: {
+                    assessees: result.data,
+                    pagination: result.pagination
+                }
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+    }
+
+    async getAssesseesNotAssessed(page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC') {
+        try {
+            const result = await assesseeRepo.findNotAssessed({
+                page,
+                limit,
+                search,
+                sortBy,
+                sortOrder
+            });
+
+            return {
+                success: true,
+                message: 'Assessees not assessed retrieved successfully',
+                data: {
+                    assessees: result.data,
+                    pagination: result.pagination
+                }
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+    }
+
+    async getAssesseesReadyForAssessment(page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC') {
+        try {
+            const result = await assesseeRepo.findReadyForAssessment({
+                page,
+                limit,
+                search,
+                sortBy,
+                sortOrder
+            });
+
+            return {
+                success: true,
+                message: 'Assessees ready for assessment retrieved successfully',
+                data: {
+                    assessees: result.data,
+                    pagination: result.pagination
+                }
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message
+            };
+        }
+    }
+
+    async getAssesseesWithResults(page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC') {
+        try {
+            const result = await assesseeRepo.findWithResults({
+                page,
+                limit,
+                search,
+                sortBy,
+                sortOrder
+            });
+
+            return {
+                success: true,
+                message: 'Assessees with results retrieved successfully',
+                data: {
+                    assessees: result.data,
+                    pagination: result.pagination
+                }
             };
         } catch (error) {
             return {
