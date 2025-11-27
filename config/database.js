@@ -20,7 +20,7 @@ const connectDB = async () => {
     console.log('✅ Database connection established successfully.');
     
     // Sync all models
-    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+    // await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
     console.log('✅ Database synchronized successfully.');
   } catch (error) {
     console.error('❌ Unable to connect to the database:', error);
