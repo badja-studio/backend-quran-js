@@ -205,6 +205,19 @@ class ParticipantRepository {
     });
   }
 
+  async findByNip(nip) {
+    return await Participant.findOne({
+      where: { nip: nip },
+      include: [
+        {
+          model: User,
+          as: 'akun',
+          attributes: ['id', 'username', 'role']
+        }
+      ]
+    });
+  }
+
   async findNotAssessed(options = {}) {
     const {
       page = 1,
@@ -485,8 +498,8 @@ class ParticipantRepository {
     });
   }
 
-  async create(participantData) {
-    return await Participant.create(participantData);
+  async create(participantData, options = {}) {
+    return await Participant.create(participantData, options);
   }
 
   async update(id, participantData) {

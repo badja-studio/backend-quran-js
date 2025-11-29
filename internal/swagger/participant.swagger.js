@@ -89,46 +89,60 @@
  *         - nip
  *         - nama
  *         - jenis_kelamin
- *         - akun_id
  *       properties:
  *         no_akun:
  *           type: string
+ *           description: Account number of the participant
  *         nip:
  *           type: string
+ *           description: NIP (Employee ID) - will be used as username and password for login
  *         nama:
  *           type: string
+ *           description: Name of the participant
  *         jenis_kelamin:
  *           type: string
  *           enum: [L, P]
+ *           description: Gender (L for Male, P for Female)
  *         tempat_lahir:
  *           type: string
+ *           description: Place of birth
  *         jabatan:
  *           type: string
+ *           description: Position/Job title
  *         jenjang:
  *           type: string
+ *           description: Education level
  *         level:
  *           type: string
+ *           description: Skill level
  *         provinsi:
  *           type: string
+ *           description: Province
  *         kab_kota:
  *           type: string
+ *           description: City/Regency
  *         sekolah:
  *           type: string
+ *           description: School name
  *         pendidikan:
  *           type: string
+ *           description: Educational background
  *         prodi:
  *           type: string
+ *           description: Study program
  *         perguruan_tinggi:
  *           type: string
+ *           description: University name
  *         jenis_pt:
  *           type: string
+ *           description: University type
  *         tahun_lulus:
  *           type: integer
+ *           description: Graduation year
  *         jadwal:
  *           type: string
  *           format: date-time
- *         akun_id:
- *           type: integer
+ *           description: Schedule
  *     
  *     PaginatedParticipants:
  *       type: object
@@ -267,6 +281,7 @@
  *         description: Server error
  *   post:
  *     summary: Create a new participant
+ *     description: Creates a new participant and automatically generates a user account. The NIP will be used as both username and password for login.
  *     tags: [Participants]
  *     security:
  *       - bearerAuth: []

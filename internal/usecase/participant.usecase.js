@@ -1,5 +1,7 @@
 const participantRepository = require('../repository/participant.repository');
 const assessorRepository = require('../repository/assessor.repository');
+const authRepository = require('../repository/auth.repository');
+const { sequelize } = require('../../config/database');
 
 class ParticipantUsecase {
   async getAllParticipants(options) {
@@ -63,28 +65,56 @@ class ParticipantUsecase {
   }
 
   async createParticipant(participantData) {
+    const transaction = await sequelize.transaction();
+    
     try {
-      // Validate required fields
-      const requiredFields = ['no_akun', 'nip', 'nama', 'jenis_kelamin', 'akun_id'];
+      // Validate required fields (removed akun_id since we'll create it)
+      const requiredFields = ['no_akun', 'nip', 'nama', 'jenis_kelamin'];
       for (const field of requiredFields) {
         if (!participantData[field]) {
           throw new Error(`${field} is required`);
         }
       }
 
-      // Check if participant already exists
-      const existingParticipant = await participantRepository.findByUserId(participantData.akun_id);
+      // Check if participant with same NIP already exists
+      const existingParticipant = await participantRepository.findByNip(participantData.nip);
       if (existingParticipant) {
-        throw new Error('Participant already exists for this user');
+        throw new Error('Participant with this NIP already exists');
       }
 
+      // Create user account first with NIP as username and password
+      const userData = {
+        username: participantData.nip,
+        password: participantData.nip, // Password same as NIP
+        role: 'participant'
+      };
+
+      const user = await authRepository.createUser(userData);
+
+      // Create participant with the user account ID
       const participant = await participantRepository.create({
         ...participantData,
+        akun_id: user.id,
         status: 'BELUM'
-      });
+      }, { transaction });
 
-      return participant;
+      await transaction.commit();
+
+      // Return participant with user info
+      return {
+        ...participant.toJSON(),
+        akun: {
+          id: user.id,
+          username: user.username,
+          role: user.role
+        },
+        loginCredentials: {
+          username: userData.username,
+          password: participantData.nip // Return original password for first-time login info
+        }
+      };
     } catch (error) {
+      await transaction.rollback();
       throw new Error(`Failed to create participant: ${error.message}`);
     }
   }

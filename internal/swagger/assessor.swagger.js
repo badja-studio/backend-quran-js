@@ -51,21 +51,23 @@
  *         - name
  *         - username
  *         - email
- *         - akun_id
  *       properties:
  *         name:
  *           type: string
+ *           description: Full name of the assessor
  *         username:
  *           type: string
+ *           description: Username - will be used as both username and password for login
  *         no_telepon:
  *           type: string
+ *           description: Phone number
  *         email:
  *           type: string
  *           format: email
+ *           description: Email address
  *         link_grup_wa:
  *           type: string
- *         akun_id:
- *           type: integer
+ *           description: WhatsApp group link
  *     
  *     AssessorBasic:
  *       type: object
@@ -163,6 +165,7 @@
  *         description: Server error
  *   post:
  *     summary: Create a new assessor
+ *     description: Creates a new assessor and automatically generates a user account. The username will be used as both username and password for login.
  *     tags: [Assessors]
  *     security:
  *       - bearerAuth: []

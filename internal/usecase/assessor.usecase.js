@@ -1,5 +1,7 @@
 const assessorRepository = require('../repository/assessor.repository');
 const participantRepository = require('../repository/participant.repository');
+const authRepository = require('../repository/auth.repository');
+const { sequelize } = require('../../config/database');
 
 class AssessorUsecase {
   async getAllAssessors(options) {
@@ -61,29 +63,57 @@ class AssessorUsecase {
   }
 
   async createAssessor(assessorData) {
+    const transaction = await sequelize.transaction();
+    
     try {
-      // Validate required fields
-      const requiredFields = ['name', 'username', 'email', 'akun_id'];
+      // Validate required fields (removed akun_id since we'll create it)
+      const requiredFields = ['name', 'username', 'email'];
       for (const field of requiredFields) {
         if (!assessorData[field]) {
           throw new Error(`${field} is required`);
         }
       }
 
-      // Check if assessor already exists
-      const existingAssessor = await assessorRepository.findByUserId(assessorData.akun_id);
+      // Check if assessor with same username already exists
+      const existingAssessor = await assessorRepository.findByUsername(assessorData.username);
       if (existingAssessor) {
-        throw new Error('Assessor already exists for this user');
+        throw new Error('Assessor with this username already exists');
       }
 
+      // Create user account first with username as both username and password
+      const userData = {
+        username: assessorData.username,
+        password: assessorData.username, // Password same as username
+        role: 'assessor'
+      };
+
+      const user = await authRepository.createUser(userData);
+
+      // Create assessor with the user account ID
       const assessor = await assessorRepository.create({
         ...assessorData,
+        akun_id: user.id,
         total_peserta_belum_asesmen: 0,
         total_peserta_selesai_asesmen: 0
-      });
+      }, { transaction });
 
-      return assessor;
+      await transaction.commit();
+
+      // Return assessor with user info
+      return {
+        ...assessor.toJSON(),
+        akun: {
+          id: user.id,
+          username: user.username,
+          role: user.role
+        },
+        loginCredentials: {
+          username: userData.username,
+          password: assessorData.username // Return original password for first-time login info
+        }
+      };
     } catch (error) {
+      await transaction.rollback();
       throw new Error(`Failed to create assessor: ${error.message}`);
     }
   }

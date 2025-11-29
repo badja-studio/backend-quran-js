@@ -185,6 +185,19 @@ class AssessorRepository {
     });
   }
 
+  async findByUsername(username) {
+    return await Assessor.findOne({
+      where: { username: username },
+      include: [
+        {
+          model: User,
+          as: 'akun',
+          attributes: ['id', 'username', 'role']
+        }
+      ]
+    });
+  }
+
   async findWithParticipants(assessorId, options = {}) {
     const {
       page = 1,
@@ -313,8 +326,8 @@ class AssessorRepository {
     };
   }
 
-  async create(assessorData) {
-    return await Assessor.create(assessorData);
+  async create(assessorData, options = {}) {
+    return await Assessor.create(assessorData, options);
   }
 
   async update(id, assessorData) {

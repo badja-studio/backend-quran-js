@@ -89,6 +89,16 @@ const Participant = sequelize.define('Participant', {
         allowNull: true,
         comment: 'Tahun Lulus'
     },
+    usia: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        comment: 'Usia Peserta'
+    },
+    pegawai:{
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Status Pegawai'
+    },
     jadwal: {
         type: DataTypes.STRING,
         allowNull: true,
