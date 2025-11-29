@@ -25,7 +25,7 @@ function setupAssociations() {
 
     Participant.belongsTo(Assessor, {
         foreignKey: 'asesor_id',
-        as: 'asesor'
+        as: 'assessor'
     });
 
     Participant.hasMany(Assessment, {
@@ -57,7 +57,7 @@ function setupAssociations() {
 
     Assessment.belongsTo(Assessor, {
         foreignKey: 'asesor_id',
-        as: 'asesor'
+        as: 'assessor'
     });
 }
 

@@ -7,10 +7,22 @@ class ParticipantRepository {
       page = 1,
       limit = 10,
       search = '',
-      sortBy = 'created_at',
+      sortBy = 'createdAt',
       sortOrder = 'DESC',
       filters = {}
     } = options;
+
+    // Mapping untuk field sorting yang valid
+    const validSortFields = {
+      'createdAt': 'createdAt',
+      'updatedAt': 'updatedAt',
+      'nama': 'nama',
+      'nip': 'nip',
+      'no_akun': 'no_akun',
+      'status': 'status'
+    };
+
+    const orderField = validSortFields[sortBy] || 'createdAt';
 
     const offset = (page - 1) * limit;
 
@@ -50,13 +62,13 @@ class ParticipantRepository {
         },
         {
           model: User,
-          as: 'user',
+          as: 'akun',
           attributes: ['id', 'username']
         }
       ],
       limit: parseInt(limit),
       offset: offset,
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [["createdAt", sortOrder.toUpperCase()]],
       distinct: true
     });
 
@@ -81,7 +93,7 @@ class ParticipantRepository {
         },
         {
           model: User,
-          as: 'user',
+          as: 'akun',
           attributes: ['id', 'username']
         }
       ]
@@ -106,7 +118,7 @@ class ParticipantRepository {
       page = 1,
       limit = 10,
       search = '',
-      sortBy = 'created_at',
+      sortBy = 'createdAt',
       sortOrder = 'DESC'
     } = options;
 
@@ -135,13 +147,13 @@ class ParticipantRepository {
         },
         {
           model: User,
-          as: 'user',
+          as: 'akun',
           attributes: ['id', 'username']
         }
       ],
       limit: parseInt(limit),
       offset: offset,
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [["createdAt", sortOrder.toUpperCase()]],
       distinct: true
     });
 
@@ -161,7 +173,7 @@ class ParticipantRepository {
       page = 1,
       limit = 10,
       search = '',
-      sortBy = 'created_at',
+      sortBy = 'createdAt',
       sortOrder = 'DESC'
     } = options;
 
@@ -191,13 +203,13 @@ class ParticipantRepository {
         },
         {
           model: User,
-          as: 'user',
+          as: 'akun',
           attributes: ['id', 'username']
         }
       ],
       limit: parseInt(limit),
       offset: offset,
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [["createdAt", sortOrder.toUpperCase()]],
       distinct: true
     });
 

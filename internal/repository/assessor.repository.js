@@ -7,7 +7,7 @@ class AssessorRepository {
       page = 1,
       limit = 10,
       search = '',
-      sortBy = 'created_at',
+      sortBy = 'createdAt',
       sortOrder = 'DESC',
       filters = {}
     } = options;
@@ -42,7 +42,7 @@ class AssessorRepository {
       include: [
         {
           model: User,
-          as: 'user',
+          as: 'akun',
           attributes: ['id', 'username']
         },
         {
@@ -73,7 +73,7 @@ class AssessorRepository {
       include: [
         {
           model: User,
-          as: 'user',
+          as: 'akun',
           attributes: ['id', 'username']
         },
         {
@@ -103,7 +103,7 @@ class AssessorRepository {
       page = 1,
       limit = 10,
       search = '',
-      sortBy = 'created_at',
+      sortBy = 'createdAt',
       sortOrder = 'DESC',
       status = null
     } = options;

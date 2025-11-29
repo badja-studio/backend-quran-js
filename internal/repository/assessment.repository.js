@@ -7,7 +7,7 @@ class AssessmentRepository {
       page = 1,
       limit = 10,
       search = '',
-      sortBy = 'created_at',
+      sortBy = 'createdAt',
       sortOrder = 'DESC',
       filters = {}
     } = options;
@@ -91,7 +91,7 @@ class AssessmentRepository {
     const {
       page = 1,
       limit = 10,
-      sortBy = 'created_at',
+      sortBy = 'createdAt',
       sortOrder = 'DESC'
     } = options;
 
@@ -133,7 +133,7 @@ class AssessmentRepository {
       page = 1,
       limit = 10,
       search = '',
-      sortBy = 'created_at',
+      sortBy = 'createdAt',
       sortOrder = 'DESC'
     } = options;
 
