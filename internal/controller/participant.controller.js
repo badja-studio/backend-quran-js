@@ -85,12 +85,28 @@ class ParticipantController {
 
   async getNotAssessedParticipants(req, res) {
     try {
+      // Parse filters from query parameter
+      let filters = [];
+      if (req.query.filters) {
+        try {
+          if (typeof req.query.filters === 'string') {
+            filters = JSON.parse(req.query.filters);
+          } else if (Array.isArray(req.query.filters)) {
+            filters = req.query.filters;
+          }
+        } catch (error) {
+          console.error('Error parsing filters:', error);
+          filters = [];
+        }
+      }
+
       const options = {
         page: parseInt(req.query.page) || 1,
         limit: parseInt(req.query.limit) || 10,
         search: req.query.search || '',
-        sortBy: req.query.sortBy || 'created_at',
-        sortOrder: req.query.sortOrder || 'DESC'
+        sortBy: req.query.sortBy || 'createdAt',
+        sortOrder: req.query.sortOrder || 'DESC',
+        filters: filters
       };
 
       const result = await participantUsecase.getNotAssessedParticipants(options);
@@ -110,12 +126,28 @@ class ParticipantController {
 
   async getReadyToAssessParticipants(req, res) {
     try {
+      // Parse filters from query parameter
+      let filters = [];
+      if (req.query.filters) {
+        try {
+          if (typeof req.query.filters === 'string') {
+            filters = JSON.parse(req.query.filters);
+          } else if (Array.isArray(req.query.filters)) {
+            filters = req.query.filters;
+          }
+        } catch (error) {
+          console.error('Error parsing filters:', error);
+          filters = [];
+        }
+      }
+
       const options = {
         page: parseInt(req.query.page) || 1,
         limit: parseInt(req.query.limit) || 10,
         search: req.query.search || '',
-        sortBy: req.query.sortBy || 'created_at',
-        sortOrder: req.query.sortOrder || 'DESC'
+        sortBy: req.query.sortBy || 'createdAt',
+        sortOrder: req.query.sortOrder || 'DESC',
+        filters: filters
       };
 
       const result = await participantUsecase.getReadyToAssessParticipants(options);

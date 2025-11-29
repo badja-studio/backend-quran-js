@@ -211,7 +211,8 @@ class ParticipantRepository {
       limit = 10,
       search = '',
       sortBy = 'createdAt',
-      sortOrder = 'DESC'
+      sortOrder = 'DESC',
+      filters = []
     } = options;
 
     const offset = (page - 1) * limit;
@@ -244,8 +245,62 @@ class ParticipantRepository {
       ]
     } : {};
 
+    // Build advanced filters
+    const filterWhere = {};
+    if (Array.isArray(filters) && filters.length > 0) {
+      filters.forEach(filter => {
+        const { field, op, value } = filter;
+        
+        if (!field || !op || value === undefined || value === null || value === '') {
+          return;
+        }
+
+        let sequelizeOp;
+        switch(op.toLowerCase()) {
+          case 'eq': case '=': sequelizeOp = Op.eq; break;
+          case 'ne': case '!=': sequelizeOp = Op.ne; break;
+          case 'gt': case '>': sequelizeOp = Op.gt; break;
+          case 'gte': case '>=': sequelizeOp = Op.gte; break;
+          case 'lt': case '<': sequelizeOp = Op.lt; break;
+          case 'lte': case '<=': sequelizeOp = Op.lte; break;
+          case 'like': sequelizeOp = Op.like; break;
+          case 'ilike': sequelizeOp = Op.iLike; break;
+          case 'in': sequelizeOp = Op.in; break;
+          case 'notin': case 'not_in': sequelizeOp = Op.notIn; break;
+          case 'between': sequelizeOp = Op.between; break;
+          case 'notbetween': case 'not_between': sequelizeOp = Op.notBetween; break;
+          case 'isnull': case 'is_null':
+            filterWhere[field] = { [Op.is]: null };
+            return;
+          case 'isnotnull': case 'is_not_null':
+            filterWhere[field] = { [Op.not]: null };
+            return;
+          default: return;
+        }
+
+        let finalValue = value;
+        if ((op.toLowerCase() === 'like' || op.toLowerCase() === 'ilike') && 
+            typeof value === 'string' && 
+            !value.includes('%')) {
+          finalValue = `%${value}%`;
+        }
+
+        if (filterWhere[field]) {
+          filterWhere[field] = {
+            [Op.and]: [
+              filterWhere[field],
+              { [sequelizeOp]: finalValue }
+            ]
+          };
+        } else {
+          filterWhere[field] = { [sequelizeOp]: finalValue };
+        }
+      });
+    }
+
     const whereClause = {
       ...searchWhere,
+      ...filterWhere,
       status: 'BELUM'
     };
 
@@ -286,7 +341,8 @@ class ParticipantRepository {
       limit = 10,
       search = '',
       sortBy = 'createdAt',
-      sortOrder = 'DESC'
+      sortOrder = 'DESC',
+      filters = []
     } = options;
 
     const offset = (page - 1) * limit;
@@ -319,8 +375,58 @@ class ParticipantRepository {
       ]
     } : {};
 
+    // Build advanced filters
+    const filterConditions = {};
+    if (filters && Array.isArray(filters) && filters.length > 0) {
+      const operatorMap = {
+        'eq': Op.eq,
+        'ne': Op.ne,
+        'gt': Op.gt,
+        'gte': Op.gte,
+        'lt': Op.lt,
+        'lte': Op.lte,
+        'like': Op.like,
+        'ilike': Op.iLike,
+        'in': Op.in,
+        'notin': Op.notIn,
+        'between': Op.between,
+        'notbetween': Op.notBetween,
+        'isnull': Op.is,
+        'isnotnull': Op.not
+      };
+
+      const allowedFields = [
+        'id', 'nama', 'nip', 'no_akun', 'status', 'jenis_kelamin', 'tempat_lahir', 
+        'tanggal_lahir', 'agama', 'pangkat', 'golongan', 'jabatan', 'unit_kerja',
+        'createdAt', 'updatedAt', 'asesor_id'
+      ];
+
+      filters.forEach(filter => {
+        if (filter.field && filter.op && allowedFields.includes(filter.field)) {
+          const operator = operatorMap[filter.op];
+          if (operator) {
+            let value = filter.value;
+            
+            // Handle special cases
+            if (filter.op === 'isnull') {
+              value = null;
+            } else if (filter.op === 'isnotnull') {
+              value = null;
+            } else if (filter.op === 'in' || filter.op === 'notin') {
+              value = Array.isArray(value) ? value : [value];
+            } else if (filter.op === 'between' || filter.op === 'notbetween') {
+              value = Array.isArray(value) ? value : [value, value];
+            }
+
+            filterConditions[filter.field] = { [operator]: value };
+          }
+        }
+      });
+    }
+
     const whereClause = {
       ...searchWhere,
+      ...filterConditions,
       asesor_id: { [Op.not]: null },
       status: 'BELUM'
     };

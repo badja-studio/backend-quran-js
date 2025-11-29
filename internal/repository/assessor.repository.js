@@ -192,7 +192,8 @@ class AssessorRepository {
       search = '',
       sortBy = 'createdAt',
       sortOrder = 'DESC',
-      status = null
+      status = null,
+      filters = []
     } = options;
 
     const offset = (page - 1) * limit;
@@ -226,9 +227,59 @@ class AssessorRepository {
       ]
     } : {};
 
+    // Build advanced filters for participants
+    const filterConditions = {};
+    if (filters && Array.isArray(filters) && filters.length > 0) {
+      const operatorMap = {
+        'eq': Op.eq,
+        'ne': Op.ne,
+        'gt': Op.gt,
+        'gte': Op.gte,
+        'lt': Op.lt,
+        'lte': Op.lte,
+        'like': Op.like,
+        'ilike': Op.iLike,
+        'in': Op.in,
+        'notin': Op.notIn,
+        'between': Op.between,
+        'notbetween': Op.notBetween,
+        'isnull': Op.is,
+        'isnotnull': Op.not
+      };
+
+      const allowedFields = [
+        'id', 'nama', 'nip', 'no_akun', 'status', 'jenis_kelamin', 'tempat_lahir', 
+        'tanggal_lahir', 'agama', 'pangkat', 'golongan', 'jabatan', 'unit_kerja',
+        'createdAt', 'updatedAt', 'asesor_id'
+      ];
+
+      filters.forEach(filter => {
+        if (filter.field && filter.op && allowedFields.includes(filter.field)) {
+          const operator = operatorMap[filter.op];
+          if (operator) {
+            let value = filter.value;
+            
+            // Handle special cases
+            if (filter.op === 'isnull') {
+              value = null;
+            } else if (filter.op === 'isnotnull') {
+              value = null;
+            } else if (filter.op === 'in' || filter.op === 'notin') {
+              value = Array.isArray(value) ? value : [value];
+            } else if (filter.op === 'between' || filter.op === 'notbetween') {
+              value = Array.isArray(value) ? value : [value, value];
+            }
+
+            filterConditions[filter.field] = { [operator]: value };
+          }
+        }
+      });
+    }
+
     // Add status filter if provided
     const participantWhere = {
       ...participantSearchWhere,
+      ...filterConditions,
       asesor_id: assessorId
     };
 

@@ -65,11 +65,28 @@ class AssessmentController {
     try {
       const { participantId } = req.params;
       
+      // Parse filters from query parameter
+      let filters = [];
+      if (req.query.filters) {
+        try {
+          if (typeof req.query.filters === 'string') {
+            filters = JSON.parse(req.query.filters);
+          } else if (Array.isArray(req.query.filters)) {
+            filters = req.query.filters;
+          }
+        } catch (error) {
+          console.error('Error parsing filters:', error);
+          filters = [];
+        }
+      }
+
       const options = {
         page: parseInt(req.query.page) || 1,
         limit: parseInt(req.query.limit) || 10,
-        sortBy: req.query.sortBy || 'created_at',
-        sortOrder: req.query.sortOrder || 'DESC'
+        search: req.query.search || '',
+        sortBy: req.query.sortBy || 'createdAt',
+        sortOrder: req.query.sortOrder || 'DESC',
+        filters: filters
       };
 
       const result = await assessmentUsecase.getAssessmentsByParticipant(participantId, options);
@@ -92,12 +109,28 @@ class AssessmentController {
     try {
       const userId = req.user.id;
       
+      // Parse filters from query parameter
+      let filters = [];
+      if (req.query.filters) {
+        try {
+          if (typeof req.query.filters === 'string') {
+            filters = JSON.parse(req.query.filters);
+          } else if (Array.isArray(req.query.filters)) {
+            filters = req.query.filters;
+          }
+        } catch (error) {
+          console.error('Error parsing filters:', error);
+          filters = [];
+        }
+      }
+
       const options = {
         page: parseInt(req.query.page) || 1,
         limit: parseInt(req.query.limit) || 10,
         search: req.query.search || '',
-        sortBy: req.query.sortBy || 'created_at',
-        sortOrder: req.query.sortOrder || 'DESC'
+        sortBy: req.query.sortBy || 'createdAt',
+        sortOrder: req.query.sortOrder || 'DESC',
+        filters: filters
       };
 
       // Assuming the user is an assessor, get their assessments
@@ -121,12 +154,28 @@ class AssessmentController {
     try {
       const { assessorId } = req.params;
       
+      // Parse filters from query parameter
+      let filters = [];
+      if (req.query.filters) {
+        try {
+          if (typeof req.query.filters === 'string') {
+            filters = JSON.parse(req.query.filters);
+          } else if (Array.isArray(req.query.filters)) {
+            filters = req.query.filters;
+          }
+        } catch (error) {
+          console.error('Error parsing filters:', error);
+          filters = [];
+        }
+      }
+
       const options = {
         page: parseInt(req.query.page) || 1,
         limit: parseInt(req.query.limit) || 10,
         search: req.query.search || '',
-        sortBy: req.query.sortBy || 'created_at',
-        sortOrder: req.query.sortOrder || 'DESC'
+        sortBy: req.query.sortBy || 'createdAt',
+        sortOrder: req.query.sortOrder || 'DESC',
+        filters: filters
       };
 
       const result = await assessmentUsecase.getAssessmentsByAssessor(assessorId, options);

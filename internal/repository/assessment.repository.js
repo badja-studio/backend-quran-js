@@ -178,7 +178,8 @@ class AssessmentRepository {
       page = 1,
       limit = 10,
       sortBy = 'createdAt',
-      sortOrder = 'DESC'
+      sortOrder = 'DESC',
+      filters = []
     } = options;
 
     const offset = (page - 1) * limit;
@@ -194,8 +195,56 @@ class AssessmentRepository {
 
     const orderField = sortFieldMapping[sortBy] || 'createdAt';
 
+    // Build advanced filters
+    const filterConditions = { peserta_id: participantId };
+    if (filters && Array.isArray(filters) && filters.length > 0) {
+      const operatorMap = {
+        'eq': Op.eq,
+        'ne': Op.ne,
+        'gt': Op.gt,
+        'gte': Op.gte,
+        'lt': Op.lt,
+        'lte': Op.lte,
+        'like': Op.like,
+        'ilike': Op.iLike,
+        'in': Op.in,
+        'notin': Op.notIn,
+        'between': Op.between,
+        'notbetween': Op.notBetween,
+        'isnull': Op.is,
+        'isnotnull': Op.not
+      };
+
+      const allowedFields = [
+        'id', 'hasil_assessment', 'catatan', 'tanggal_assessment',
+        'createdAt', 'updatedAt', 'asesor_id', 'peserta_id'
+      ];
+
+      filters.forEach(filter => {
+        if (filter.field && filter.op && allowedFields.includes(filter.field)) {
+          const operator = operatorMap[filter.op];
+          if (operator) {
+            let value = filter.value;
+            
+            // Handle special cases
+            if (filter.op === 'isnull') {
+              value = null;
+            } else if (filter.op === 'isnotnull') {
+              value = null;
+            } else if (filter.op === 'in' || filter.op === 'notin') {
+              value = Array.isArray(value) ? value : [value];
+            } else if (filter.op === 'between' || filter.op === 'notbetween') {
+              value = Array.isArray(value) ? value : [value, value];
+            }
+
+            filterConditions[filter.field] = { [operator]: value };
+          }
+        }
+      });
+    }
+
     const { count, rows } = await Assessment.findAndCountAll({
-      where: { peserta_id: participantId },
+      where: filterConditions,
       include: [
         {
           model: Participant,
@@ -231,7 +280,8 @@ class AssessmentRepository {
       limit = 10,
       search = '',
       sortBy = 'createdAt',
-      sortOrder = 'DESC'
+      sortOrder = 'DESC',
+      filters = []
     } = options;
 
     const offset = (page - 1) * limit;
@@ -246,6 +296,54 @@ class AssessmentRepository {
     };
 
     const orderField = sortFieldMapping[sortBy] || 'createdAt';
+
+    // Build advanced filters for assessment
+    const filterConditions = { asesor_id: assessorId };
+    if (filters && Array.isArray(filters) && filters.length > 0) {
+      const operatorMap = {
+        'eq': Op.eq,
+        'ne': Op.ne,
+        'gt': Op.gt,
+        'gte': Op.gte,
+        'lt': Op.lt,
+        'lte': Op.lte,
+        'like': Op.like,
+        'ilike': Op.iLike,
+        'in': Op.in,
+        'notin': Op.notIn,
+        'between': Op.between,
+        'notbetween': Op.notBetween,
+        'isnull': Op.is,
+        'isnotnull': Op.not
+      };
+
+      const allowedFields = [
+        'id', 'hasil_assessment', 'catatan', 'tanggal_assessment',
+        'createdAt', 'updatedAt', 'asesor_id', 'peserta_id'
+      ];
+
+      filters.forEach(filter => {
+        if (filter.field && filter.op && allowedFields.includes(filter.field)) {
+          const operator = operatorMap[filter.op];
+          if (operator) {
+            let value = filter.value;
+            
+            // Handle special cases
+            if (filter.op === 'isnull') {
+              value = null;
+            } else if (filter.op === 'isnotnull') {
+              value = null;
+            } else if (filter.op === 'in' || filter.op === 'notin') {
+              value = Array.isArray(value) ? value : [value];
+            } else if (filter.op === 'between' || filter.op === 'notbetween') {
+              value = Array.isArray(value) ? value : [value, value];
+            }
+
+            filterConditions[filter.field] = { [operator]: value };
+          }
+        }
+      });
+    }
 
     // Search in participant name/nip
     const includeWhere = [];
@@ -277,7 +375,7 @@ class AssessmentRepository {
     });
 
     const { count, rows } = await Assessment.findAndCountAll({
-      where: { asesor_id: assessorId },
+      where: filterConditions,
       include: includeWhere,
       limit: parseInt(limit),
       offset: offset,

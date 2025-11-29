@@ -85,13 +85,29 @@ class AssessorController {
       const userId = req.user.id;
       const assessor = await assessorUsecase.getAssessorByUserId(userId);
       
+      // Parse filters from query parameter
+      let filters = [];
+      if (req.query.filters) {
+        try {
+          if (typeof req.query.filters === 'string') {
+            filters = JSON.parse(req.query.filters);
+          } else if (Array.isArray(req.query.filters)) {
+            filters = req.query.filters;
+          }
+        } catch (error) {
+          console.error('Error parsing filters:', error);
+          filters = [];
+        }
+      }
+
       const options = {
         page: parseInt(req.query.page) || 1,
         limit: parseInt(req.query.limit) || 10,
         search: req.query.search || '',
-        sortBy: req.query.sortBy || 'created_at',
+        sortBy: req.query.sortBy || 'createdAt',
         sortOrder: req.query.sortOrder || 'DESC',
-        status: req.query.status // SUDAH or BELUM
+        status: req.query.status, // SUDAH or BELUM
+        filters: filters
       };
 
       const result = await assessorUsecase.getAssessorParticipants(assessor.id, options);
@@ -114,13 +130,29 @@ class AssessorController {
     try {
       const { id } = req.params;
       
+      // Parse filters from query parameter
+      let filters = [];
+      if (req.query.filters) {
+        try {
+          if (typeof req.query.filters === 'string') {
+            filters = JSON.parse(req.query.filters);
+          } else if (Array.isArray(req.query.filters)) {
+            filters = req.query.filters;
+          }
+        } catch (error) {
+          console.error('Error parsing filters:', error);
+          filters = [];
+        }
+      }
+
       const options = {
         page: parseInt(req.query.page) || 1,
         limit: parseInt(req.query.limit) || 10,
         search: req.query.search || '',
-        sortBy: req.query.sortBy || 'created_at',
+        sortBy: req.query.sortBy || 'createdAt',
         sortOrder: req.query.sortOrder || 'DESC',
-        status: req.query.status // SUDAH or BELUM
+        status: req.query.status, // SUDAH or BELUM
+        filters: filters
       };
 
       const result = await assessorUsecase.getAssessorParticipants(id, options);
