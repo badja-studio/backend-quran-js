@@ -8,122 +8,22 @@ const User = sequelize.define('User', {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
-    siagaNumber: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        index: true
-    },
-    email: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-        validate: {
-            isEmail: true
-        }
-    },
-    password: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
     username: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true
-    },
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    fullname: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    phoneNumber: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    accountNumber: {
-        type: DataTypes.STRING,
-        allowNull: true,
         unique: true,
-        comment: 'No. Akun'
+        comment: 'Username/NIP untuk login'
     },
-    nip: {
+    password: {
         type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Nomor Induk Pegawai'
-    },
-    gender: {
-        type: DataTypes.ENUM('L', 'P'),
-        allowNull: true,
-        comment: 'Jenis Kelamin: L=Laki-laki, P=Perempuan'
-    },
-    birthPlace: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Tempat Lahir'
-    },
-    position: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Jabatan/Pegawai'
-    },
-    province: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Provinsi'
-    },
-    schoolLevels: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    schoolName: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    levels: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    district: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Kabupaten/Kotamadya'
-    },
-    education: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Pendidikan Terakhir (D3, S1, S2, S3)'
-    },
-    studyProgram: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Program Studi'
-    },
-    university: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Perguruan Tinggi'
-    },
-    universityType: {
-        type: DataTypes.ENUM('Negeri', 'Swasta'),
-        allowNull: true,
-        comment: 'Jenis Perguruan Tinggi'
-    },
-    graduationYear: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Tahun Lulus'
-    },
-    waLink: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'WhatsApp link for Assessor'
-    },
-    roles: {
-        type: DataTypes.ENUM('Admin', 'Assessor', 'Assessee'),
         allowNull: false,
-        defaultValue: 'Assessee'
+        comment: 'Password untuk login'
+    },
+    role: {
+        type: DataTypes.ENUM('participant', 'assessor', 'admin'),
+        allowNull: false,
+        defaultValue: 'participant',
+        comment: 'Role user'
     }
 }, {
     tableName: 'users',

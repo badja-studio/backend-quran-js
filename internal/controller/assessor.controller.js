@@ -1,96 +1,332 @@
-const assessorUseCase = require('../usecase/assessor.usecase');
+const assessorUsecase = require('../usecase/assessor.usecase');
 
 class AssessorController {
-    /**
-     * Get all assessees assigned to this assessor
-     */
-    async getMyAssessees(req, res) {
-        try {
-            const result = await assessorUseCase.getMyAssessees(req.user.id);
-            return res.status(200).json(result);
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: 'Internal server error',
-                error: error.message
-            });
+  async getAllAssessors(req, res) {
+    try {
+      const options = {
+        page: parseInt(req.query.page) || 1,
+        limit: parseInt(req.query.limit) || 10,
+        search: req.query.search || '',
+        sortBy: req.query.sortBy || 'created_at',
+        sortOrder: req.query.sortOrder || 'DESC',
+        filters: {
+          // Add any specific filters for assessors
         }
-    }
+      };
 
-    /**
-     * Get assessee detail with criteria
-     */
-    async getAssesseeDetail(req, res) {
-        try {
-            const result = await assessorUseCase.getAssesseeDetail(req.user.id, req.params.id);
-            const statusCode = result.success ? 200 : 403;
-            return res.status(statusCode).json(result);
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: 'Internal server error',
-                error: error.message
-            });
-        }
-    }
+      const result = await assessorUsecase.getAllAssessors(options);
 
-    /**
-     * Submit assessments for an assessee
-     */
-    async submitAssessments(req, res) {
-        try {
-            const result = await assessorUseCase.submitAssessments(
-                req.user.id,
-                req.params.assesseeId,
-                req.body.assessments
-            );
-            const statusCode = result.success ? 200 : 400;
-            return res.status(statusCode).json(result);
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: 'Internal server error',
-                error: error.message
-            });
-        }
+      res.status(200).json({
+        success: true,
+        message: 'Assessors retrieved successfully',
+        ...result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
     }
+  }
 
-    /**
-     * Update a specific assessment
-     */
-    async updateAssessment(req, res) {
-        try {
-            const result = await assessorUseCase.updateAssessment(
-                req.user.id,
-                req.params.id,
-                req.body
-            );
-            const statusCode = result.success ? 200 : 400;
-            return res.status(statusCode).json(result);
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: 'Internal server error',
-                error: error.message
-            });
-        }
-    }
+  async getAssessorById(req, res) {
+    try {
+      const { id } = req.params;
+      const assessor = await assessorUsecase.getAssessorById(id);
 
-    /**
-     * Get all assessments given by this assessor
-     */
-    async getMyAssessments(req, res) {
-        try {
-            const result = await assessorUseCase.getMyAssessments(req.user.id);
-            return res.status(200).json(result);
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: 'Internal server error',
-                error: error.message
-            });
-        }
+      res.status(200).json({
+        success: true,
+        message: 'Assessor retrieved successfully',
+        data: assessor
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
     }
+  }
+
+  async getMyProfile(req, res) {
+    try {
+      const userId = req.user.id;
+      const assessor = await assessorUsecase.getAssessorByUserId(userId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Assessor profile retrieved successfully',
+        data: assessor
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async getMyParticipants(req, res) {
+    try {
+      const userId = req.user.id;
+      const assessor = await assessorUsecase.getAssessorByUserId(userId);
+      
+      const options = {
+        page: parseInt(req.query.page) || 1,
+        limit: parseInt(req.query.limit) || 10,
+        search: req.query.search || '',
+        sortBy: req.query.sortBy || 'created_at',
+        sortOrder: req.query.sortOrder || 'DESC',
+        status: req.query.status // SUDAH or BELUM
+      };
+
+      const result = await assessorUsecase.getAssessorParticipants(assessor.id, options);
+
+      res.status(200).json({
+        success: true,
+        message: 'My participants retrieved successfully',
+        ...result
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async getAssessorParticipants(req, res) {
+    try {
+      const { id } = req.params;
+      
+      const options = {
+        page: parseInt(req.query.page) || 1,
+        limit: parseInt(req.query.limit) || 10,
+        search: req.query.search || '',
+        sortBy: req.query.sortBy || 'created_at',
+        sortOrder: req.query.sortOrder || 'DESC',
+        status: req.query.status // SUDAH or BELUM
+      };
+
+      const result = await assessorUsecase.getAssessorParticipants(id, options);
+
+      res.status(200).json({
+        success: true,
+        message: 'Assessor participants retrieved successfully',
+        ...result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async createAssessor(req, res) {
+    try {
+      const assessorData = req.body;
+      const assessor = await assessorUsecase.createAssessor(assessorData);
+
+      res.status(201).json({
+        success: true,
+        message: 'Assessor created successfully',
+        data: assessor
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('already exists') || error.message.includes('required') ? 400 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async updateAssessor(req, res) {
+    try {
+      const { id } = req.params;
+      const assessorData = req.body;
+      const assessor = await assessorUsecase.updateAssessor(id, assessorData);
+
+      res.status(200).json({
+        success: true,
+        message: 'Assessor updated successfully',
+        data: assessor
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async deleteAssessor(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await assessorUsecase.deleteAssessor(id);
+
+      res.status(200).json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('not found') ? 404 : 
+                        error.message.includes('Cannot delete') ? 409 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async assignParticipantToMe(req, res) {
+    try {
+      const userId = req.user.id;
+      const { participant_id } = req.body;
+
+      if (!participant_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'participant_id is required'
+        });
+      }
+
+      const assessor = await assessorUsecase.getAssessorByUserId(userId);
+      const participant = await assessorUsecase.assignParticipantToSelf(assessor.id, participant_id);
+
+      res.status(200).json({
+        success: true,
+        message: 'Participant assigned to me successfully',
+        data: participant
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('not found') || 
+                        error.message.includes('already assigned') ? 400 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async assignParticipant(req, res) {
+    try {
+      const { id } = req.params; // assessor id
+      const { participant_id } = req.body;
+
+      if (!participant_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'participant_id is required'
+        });
+      }
+
+      const participant = await assessorUsecase.assignParticipantToSelf(id, participant_id);
+
+      res.status(200).json({
+        success: true,
+        message: 'Participant assigned successfully',
+        data: participant
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('not found') || 
+                        error.message.includes('already assigned') ? 400 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async unassignParticipant(req, res) {
+    try {
+      const { id } = req.params; // assessor id
+      const { participant_id } = req.body;
+
+      if (!participant_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'participant_id is required'
+        });
+      }
+
+      const participant = await assessorUsecase.unassignParticipant(id, participant_id);
+
+      res.status(200).json({
+        success: true,
+        message: 'Participant unassigned successfully',
+        data: participant
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('not found') || 
+                        error.message.includes('not assigned') ? 400 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async getMyStatistics(req, res) {
+    try {
+      const userId = req.user.id;
+      const assessor = await assessorUsecase.getAssessorByUserId(userId);
+      const statistics = await assessorUsecase.getAssessorStatistics(assessor.id);
+
+      res.status(200).json({
+        success: true,
+        message: 'My statistics retrieved successfully',
+        data: statistics
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async getAssessorStatistics(req, res) {
+    try {
+      const { id } = req.params;
+      const statistics = await assessorUsecase.getAssessorStatistics(id);
+
+      res.status(200).json({
+        success: true,
+        message: 'Assessor statistics retrieved successfully',
+        data: statistics
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async updateParticipantCounts(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await assessorUsecase.updateParticipantCounts(id);
+
+      res.status(200).json({
+        success: true,
+        message: 'Participant counts updated successfully',
+        data: result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
 }
 
 module.exports = new AssessorController();

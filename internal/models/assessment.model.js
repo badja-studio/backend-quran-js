@@ -7,40 +7,40 @@ const Assessment = sequelize.define('Assessment', {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
-    assesseeId: {
+    peserta_id: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-            model: 'users',
+            model: 'participants',
             key: 'id'
         },
-        onDelete: 'CASCADE'
+        onDelete: 'CASCADE',
+        comment: 'ID Peserta yang dinilai'
     },
-    assessorId: {
+    asesor_id: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-            model: 'users',
+            model: 'assessors',
             key: 'id'
         },
-        onDelete: 'CASCADE'
+        onDelete: 'CASCADE',
+        comment: 'ID Asesor yang menilai'
     },
-    criterionId: {
-        type: DataTypes.UUID,
+    huruf: {
+        type: DataTypes.STRING,
         allowNull: false,
-        references: {
-            model: 'criteria',
-            key: 'id'
-        },
-        onDelete: 'CASCADE'
+        comment: 'Huruf/Aspek yang dinilai (A, B, C, dst)'
     },
-    score: {
+    nilai: {
         type: DataTypes.DECIMAL(5, 2),
-        allowNull: false
+        allowNull: false,
+        comment: 'Nilai yang diberikan'
     },
-    notes: {
-        type: DataTypes.TEXT,
-        allowNull: true
+    kategori: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        comment: 'Kategori penilaian'
     }
 }, {
     tableName: 'assessments',

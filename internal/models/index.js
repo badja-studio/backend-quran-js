@@ -1,104 +1,63 @@
 // Import all models
 const User = require('./user.model');
-const CriteriaGroup = require('./criteriaGroup.model');
-const Criterion = require('./criterion.model');
-const Schedule = require('./schedule.model');
-const AssesseeSchedule = require('./assesseeSchedule.model');
-const AssesseeAssessor = require('./assesseeAssessor.model');
-const AssesseeGroup = require('./assesseeGroup.model');
+const Participant = require('./participant.model');
+const Assessor = require('./assessor.model');
 const Assessment = require('./assessment.model');
-const Surah = require('./surah.model');
 
 // Setup associations
 function setupAssociations() {
-    // CriteriaGroup associations
-    CriteriaGroup.hasMany(Criterion, {
-        foreignKey: 'criteriaGroupId',
-        as: 'criteria'
+    // User associations
+    User.hasOne(Participant, {
+        foreignKey: 'akun_id',
+        as: 'participant'
     });
 
-    // Criterion associations
-    Criterion.belongsTo(CriteriaGroup, {
-        foreignKey: 'criteriaGroupId',
-        as: 'criteriaGroup'
-    });
-
-    Criterion.hasMany(Assessment, {
-        foreignKey: 'criterionId',
-        as: 'assessments'
-    });
-
-    // Schedule associations
-    Schedule.belongsToMany(User, {
-        through: AssesseeSchedule,
-        foreignKey: 'scheduleId',
-        otherKey: 'assesseeId',
-        as: 'assessees'
-    });
-
-    // User associations for Schedule (reverse)
-    User.belongsToMany(Schedule, {
-        through: AssesseeSchedule,
-        foreignKey: 'assesseeId',
-        otherKey: 'scheduleId',
-        as: 'schedules'
-    });
-
-    // Assessee-Assessor associations
-    User.belongsToMany(User, {
-        through: AssesseeAssessor,
-        foreignKey: 'assesseeId',
-        otherKey: 'assessorId',
-        as: 'assessors'
-    });
-
-    User.belongsToMany(User, {
-        through: AssesseeAssessor,
-        foreignKey: 'assessorId',
-        otherKey: 'assesseeId',
-        as: 'assessees'
-    });
-
-    // Assessee-CriteriaGroup associations
-    User.belongsToMany(CriteriaGroup, {
-        through: AssesseeGroup,
-        foreignKey: 'assesseeId',
-        otherKey: 'criteriaGroupId',
-        as: 'criteriaGroups'
-    });
-
-    CriteriaGroup.belongsToMany(User, {
-        through: AssesseeGroup,
-        foreignKey: 'criteriaGroupId',
-        otherKey: 'assesseeId',
-        as: 'assignedAssessees'
-    });
-
-    // Assessment associations
-    Assessment.belongsTo(User, {
-        foreignKey: 'assesseeId',
-        as: 'assessee'
-    });
-
-    Assessment.belongsTo(User, {
-        foreignKey: 'assessorId',
+    User.hasOne(Assessor, {
+        foreignKey: 'akun_id',
         as: 'assessor'
     });
 
-    Assessment.belongsTo(Criterion, {
-        foreignKey: 'criterionId',
-        as: 'criterion'
+    // Participant associations
+    Participant.belongsTo(User, {
+        foreignKey: 'akun_id',
+        as: 'akun'
     });
 
-    // User associations for Assessment
-    User.hasMany(Assessment, {
-        foreignKey: 'assesseeId',
-        as: 'receivedAssessments'
+    Participant.belongsTo(Assessor, {
+        foreignKey: 'asesor_id',
+        as: 'asesor'
     });
 
-    User.hasMany(Assessment, {
-        foreignKey: 'assessorId',
-        as: 'givenAssessments'
+    Participant.hasMany(Assessment, {
+        foreignKey: 'peserta_id',
+        as: 'assessments'
+    });
+
+    // Assessor associations
+    Assessor.belongsTo(User, {
+        foreignKey: 'akun_id',
+        as: 'akun'
+    });
+
+    Assessor.hasMany(Participant, {
+        foreignKey: 'asesor_id',
+        as: 'participants'
+    });
+
+    Assessor.hasMany(Assessment, {
+        foreignKey: 'asesor_id',
+        as: 'assessments'
+    });
+
+    // Assessment associations
+    Assessment.belongsTo(Participant, {
+        foreignKey: 'peserta_id',
+        as: 'peserta'
+    });
+
+    Assessment.belongsTo(Assessor, {
+        foreignKey: 'asesor_id',
+        as: 'asesor'
     });
 }
 
@@ -108,12 +67,7 @@ setupAssociations();
 // Export all models
 module.exports = {
     User,
-    CriteriaGroup,
-    Criterion,
-    Schedule,
-    AssesseeSchedule,
-    AssesseeAssessor,
-    AssesseeGroup,
-    Assessment,
-    Surah
+    Participant,
+    Assessor,
+    Assessment
 };

@@ -1,194 +1,201 @@
-const assesseeAssessorRepo = require('../repository/assesseeAssessor.repository');
-const assessmentRepo = require('../repository/assessment.repository');
-const criterionRepo = require('../repository/criterion.repository');
+const assessorRepository = require('../repository/assessor.repository');
+const participantRepository = require('../repository/participant.repository');
 
-class AssessorUseCase {
-    /**
-     * Get all assessees assigned to this assessor
-     */
-    async getMyAssessees(assessorId) {
-        try {
-            const assessees = await assesseeAssessorRepo.getAssesseesForAssessor(assessorId);
-
-            return {
-                success: true,
-                data: assessees
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: error.message
-            };
-        }
+class AssessorUsecase {
+  async getAllAssessors(options) {
+    try {
+      return await assessorRepository.findAll(options);
+    } catch (error) {
+      throw new Error(`Failed to get assessors: ${error.message}`);
     }
+  }
 
-    /**
-     * Get assessee detail with criteria
-     */
-    async getAssesseeDetail(assessorId, assesseeId) {
-        try {
-            const { User } = require('../models');
-            const assesseeGroupRepo = require('../repository/assesseeGroup.repository');
-
-            // Verify this assessor is assigned to this assessee
-            const assessees = await assesseeAssessorRepo.getAssesseesForAssessor(assessorId);
-            const isAssigned = assessees.some(a => a.id === assesseeId);
-
-            if (!isAssigned) {
-                throw new Error('You are not assigned to this assessee');
-            }
-
-            // Get assessee info
-            const assessee = await User.findByPk(assesseeId, {
-                attributes: { exclude: ['password'] }
-            });
-
-            // Get criteria group with criteria
-            const criteriaGroup = await assesseeGroupRepo.getCriteriaGroupForAssessee(assesseeId);
-
-            if (!criteriaGroup) {
-                throw new Error('No criteria group assigned to this assessee');
-            }
-
-            // Get existing assessments from this assessor
-            const existingAssessments = await assessmentRepo.getAssessmentsByAssessor(assessorId);
-            const assesseeAssessments = existingAssessments.filter(a => a.assesseeId === assesseeId);
-
-            return {
-                success: true,
-                data: {
-                    assessee,
-                    criteriaGroup,
-                    existingAssessments: assesseeAssessments
-                }
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: error.message
-            };
-        }
+  async getAssessorById(id) {
+    try {
+      const assessor = await assessorRepository.findById(id);
+      if (!assessor) {
+        throw new Error('Assessor not found');
+      }
+      return assessor;
+    } catch (error) {
+      throw new Error(`Failed to get assessor: ${error.message}`);
     }
+  }
 
-    /**
-     * Submit assessments for an assessee
-     */
-    async submitAssessments(assessorId, assesseeId, assessments) {
-        try {
-            const assesseeGroupRepo = require('../repository/assesseeGroup.repository');
-
-            // Verify this assessor is assigned to this assessee
-            const assessees = await assesseeAssessorRepo.getAssesseesForAssessor(assessorId);
-            const isAssigned = assessees.some(a => a.id === assesseeId);
-
-            if (!isAssigned) {
-                throw new Error('You are not assigned to this assessee');
-            }
-
-            // Verify all criteria belong to the assessee's criteria group
-            const criteriaGroup = await assesseeGroupRepo.getCriteriaGroupForAssessee(assesseeId);
-            if (!criteriaGroup) {
-                throw new Error('No criteria group assigned to this assessee');
-            }
-
-            const validCriteriaIds = criteriaGroup.criteria.map(c => c.id);
-
-            for (const item of assessments) {
-                if (!validCriteriaIds.includes(item.criterionId)) {
-                    throw new Error(`Invalid criterion ID: ${item.criterionId}`);
-                }
-
-                // Verify score is within max score
-                const criterion = criteriaGroup.criteria.find(c => c.id === item.criterionId);
-                if (item.score > criterion.maxScore || item.score < 0) {
-                    throw new Error(`Score must be between 0 and ${criterion.maxScore}`);
-                }
-            }
-
-            // Batch create/update assessments
-            const results = await assessmentRepo.batchCreateOrUpdate(
-                assesseeId,
-                assessorId,
-                assessments
-            );
-
-            return {
-                success: true,
-                message: 'Assessments submitted successfully',
-                data: results
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: error.message
-            };
-        }
+  async getAssessorByUserId(userId) {
+    try {
+      const assessor = await assessorRepository.findByUserId(userId);
+      if (!assessor) {
+        throw new Error('Assessor not found for this user');
+      }
+      return assessor;
+    } catch (error) {
+      throw new Error(`Failed to get assessor by user ID: ${error.message}`);
     }
+  }
 
-    /**
-     * Update a specific assessment
-     */
-    async updateAssessment(assessorId, assessmentId, data) {
-        try {
-            const assessment = await assessmentRepo.findById(assessmentId);
+  async getAssessorWithParticipants(assessorId, options) {
+    try {
+      const assessor = await assessorRepository.findById(assessorId);
+      if (!assessor) {
+        throw new Error('Assessor not found');
+      }
 
-            if (!assessment) {
-                throw new Error('Assessment not found');
-            }
-
-            if (assessment.assessorId !== assessorId) {
-                throw new Error('You can only update your own assessments');
-            }
-
-            const { score, notes } = data;
-
-            // Verify score is within max score
-            if (score !== undefined) {
-                const criterion = assessment.criterion;
-                if (score > criterion.maxScore || score < 0) {
-                    throw new Error(`Score must be between 0 and ${criterion.maxScore}`);
-                }
-            }
-
-            const updated = await assessmentRepo.createOrUpdate({
-                assesseeId: assessment.assesseeId,
-                assessorId: assessment.assessorId,
-                criterionId: assessment.criterionId,
-                score: score !== undefined ? score : assessment.score,
-                notes: notes !== undefined ? notes : assessment.notes
-            });
-
-            return {
-                success: true,
-                message: 'Assessment updated successfully',
-                data: updated
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: error.message
-            };
-        }
+      const participants = await assessorRepository.findWithParticipants(assessorId, options);
+      
+      return {
+        assessor,
+        participants
+      };
+    } catch (error) {
+      throw new Error(`Failed to get assessor with participants: ${error.message}`);
     }
+  }
 
-    /**
-     * Get all assessments given by this assessor
-     */
-    async getMyAssessments(assessorId) {
-        try {
-            const assessments = await assessmentRepo.getAssessmentsByAssessor(assessorId);
-
-            return {
-                success: true,
-                data: assessments
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: error.message
-            };
-        }
+  async getAssessorParticipants(assessorId, options) {
+    try {
+      return await assessorRepository.findWithParticipants(assessorId, options);
+    } catch (error) {
+      throw new Error(`Failed to get assessor participants: ${error.message}`);
     }
+  }
+
+  async createAssessor(assessorData) {
+    try {
+      // Validate required fields
+      const requiredFields = ['name', 'username', 'email', 'akun_id'];
+      for (const field of requiredFields) {
+        if (!assessorData[field]) {
+          throw new Error(`${field} is required`);
+        }
+      }
+
+      // Check if assessor already exists
+      const existingAssessor = await assessorRepository.findByUserId(assessorData.akun_id);
+      if (existingAssessor) {
+        throw new Error('Assessor already exists for this user');
+      }
+
+      const assessor = await assessorRepository.create({
+        ...assessorData,
+        total_peserta_belum_asesmen: 0,
+        total_peserta_selesai_asesmen: 0
+      });
+
+      return assessor;
+    } catch (error) {
+      throw new Error(`Failed to create assessor: ${error.message}`);
+    }
+  }
+
+  async updateAssessor(id, assessorData) {
+    try {
+      const assessor = await assessorRepository.update(id, assessorData);
+      if (!assessor) {
+        throw new Error('Assessor not found');
+      }
+      return assessor;
+    } catch (error) {
+      throw new Error(`Failed to update assessor: ${error.message}`);
+    }
+  }
+
+  async deleteAssessor(id) {
+    try {
+      const assessor = await assessorRepository.findById(id);
+      if (!assessor) {
+        throw new Error('Assessor not found');
+      }
+
+      // Check if assessor has participants assigned
+      if (assessor.participants && assessor.participants.length > 0) {
+        throw new Error('Cannot delete assessor with assigned participants. Please reassign participants first.');
+      }
+
+      const deleted = await assessorRepository.delete(id);
+      if (!deleted) {
+        throw new Error('Failed to delete assessor');
+      }
+
+      return { message: 'Assessor deleted successfully' };
+    } catch (error) {
+      throw new Error(`Failed to delete assessor: ${error.message}`);
+    }
+  }
+
+  async assignParticipantToSelf(assessorId, participantId) {
+    try {
+      // Check if assessor exists
+      const assessor = await assessorRepository.findById(assessorId);
+      if (!assessor) {
+        throw new Error('Assessor not found');
+      }
+
+      // Check if participant exists and is not already assigned
+      const participant = await participantRepository.findById(participantId);
+      if (!participant) {
+        throw new Error('Participant not found');
+      }
+
+      if (participant.asesor_id) {
+        throw new Error('Participant is already assigned to an assessor');
+      }
+
+      const updatedParticipant = await participantRepository.assignAssessor(participantId, assessorId);
+      if (!updatedParticipant) {
+        throw new Error('Failed to assign participant');
+      }
+
+      // Update assessor participant counts
+      await assessorRepository.updateParticipantCounts(assessorId);
+
+      return updatedParticipant;
+    } catch (error) {
+      throw new Error(`Failed to assign participant: ${error.message}`);
+    }
+  }
+
+  async unassignParticipant(assessorId, participantId) {
+    try {
+      // Check if participant exists and is assigned to this assessor
+      const participant = await participantRepository.findById(participantId);
+      if (!participant) {
+        throw new Error('Participant not found');
+      }
+
+      if (participant.asesor_id !== assessorId) {
+        throw new Error('Participant is not assigned to this assessor');
+      }
+
+      const updatedParticipant = await participantRepository.assignAssessor(participantId, null);
+      if (!updatedParticipant) {
+        throw new Error('Failed to unassign participant');
+      }
+
+      // Update assessor participant counts
+      await assessorRepository.updateParticipantCounts(assessorId);
+
+      return updatedParticipant;
+    } catch (error) {
+      throw new Error(`Failed to unassign participant: ${error.message}`);
+    }
+  }
+
+  async getAssessorStatistics(assessorId) {
+    try {
+      return await assessorRepository.getStatistics(assessorId);
+    } catch (error) {
+      throw new Error(`Failed to get assessor statistics: ${error.message}`);
+    }
+  }
+
+  async updateParticipantCounts(assessorId) {
+    try {
+      return await assessorRepository.updateParticipantCounts(assessorId);
+    } catch (error) {
+      throw new Error(`Failed to update participant counts: ${error.message}`);
+    }
+  }
 }
 
-module.exports = new AssessorUseCase();
+module.exports = new AssessorUsecase();
