@@ -94,7 +94,7 @@
 
 /**
  * @swagger
- * /assessors:
+ * /api/assessors:
  *   get:
  *     summary: Get all assessors with pagination, filtering, and search
  *     tags: [Assessors]
@@ -166,7 +166,7 @@
 
 /**
  * @swagger
- * /assessors/profile:
+ * /api/assessors/profile:
  *   get:
  *     summary: Get current user's assessor profile
  *     tags: [Assessors]
@@ -194,7 +194,7 @@
 
 /**
  * @swagger
- * /assessors/participants:
+ * /api/assessors/participants:
  *   get:
  *     summary: Get current assessor's participants
  *     tags: [Assessors]
@@ -232,7 +232,7 @@
 
 /**
  * @swagger
- * /assessors/statistics:
+ * /api/assessors/statistics:
  *   get:
  *     summary: Get current assessor's statistics
  *     tags: [Assessors]
@@ -268,7 +268,7 @@
 
 /**
  * @swagger
- * /assessors/assign-participant:
+ * /api/assessors/assign-participant:
  *   post:
  *     summary: Assign participant to current assessor
  *     tags: [Assessors]
@@ -299,7 +299,7 @@
 
 /**
  * @swagger
- * /assessors/{id}:
+ * /api/assessors/{id}:
  *   get:
  *     summary: Get assessor by ID
  *     tags: [Assessors]
@@ -378,7 +378,7 @@
 
 /**
  * @swagger
- * /assessors/{id}/participants:
+ * /api/assessors/{id}/participants:
  *   get:
  *     summary: Get participants assigned to specific assessor
  *     tags: [Assessors]
@@ -416,7 +416,7 @@
 
 /**
  * @swagger
- * /assessors/{id}/assign-participant:
+ * /api/assessors/{id}/assign-participant:
  *   post:
  *     summary: Assign participant to specific assessor
  *     tags: [Assessors]
@@ -450,7 +450,7 @@
 
 /**
  * @swagger
- * /assessors/{id}/unassign-participant:
+ * /api/assessors/{id}/unassign-participant:
  *   put:
  *     summary: Unassign participant from assessor
  *     tags: [Assessors]

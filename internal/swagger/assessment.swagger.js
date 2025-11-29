@@ -84,7 +84,7 @@
 
 /**
  * @swagger
- * /assessments:
+ * /api/assessments:
  *   get:
  *     summary: Get all assessments with pagination and filters
  *     tags: [Assessments]
@@ -138,7 +138,7 @@
 
 /**
  * @swagger
- * /assessments/bulk:
+ * /api/assessments/bulk:
  *   post:
  *     summary: Create multiple assessments in bulk
  *     tags: [Assessments]
@@ -159,7 +159,7 @@
 
 /**
  * @swagger
- * /assessments/my-assessments:
+ * /api/assessments/my-assessments:
  *   get:
  *     summary: Get my assessments (for assessor)
  *     tags: [Assessments]
@@ -185,7 +185,7 @@
 
 /**
  * @swagger
- * /assessments/my-summary:
+ * /api/assessments/my-summary:
  *   get:
  *     summary: Get my assessment summary
  *     tags: [Assessments]
@@ -200,7 +200,7 @@
 
 /**
  * @swagger
- * /assessments/participant/{participantId}:
+ * /api/assessments/participant/{participantId}:
  *   get:
  *     summary: Get assessments by participant
  *     tags: [Assessments]
@@ -221,7 +221,7 @@
 
 /**
  * @swagger
- * /assessments/participant/{participantId}/summary:
+ * /api/assessments/participant/{participantId}/summary:
  *   get:
  *     summary: Get participant assessment summary
  *     tags: [Assessments]
@@ -242,7 +242,7 @@
 
 /**
  * @swagger
- * /assessments/assessor/{assessorId}:
+ * /api/assessments/assessor/{assessorId}:
  *   get:
  *     summary: Get assessments by assessor
  *     tags: [Assessments]
@@ -263,7 +263,7 @@
 
 /**
  * @swagger
- * /assessments/assessor/{assessorId}/summary:
+ * /api/assessments/assessor/{assessorId}/summary:
  *   get:
  *     summary: Get assessor assessment summary
  *     tags: [Assessments]
@@ -284,7 +284,7 @@
 
 /**
  * @swagger
- * /assessments/{id}:
+ * /api/assessments/{id}:
  *   get:
  *     summary: Get assessment by ID
  *     tags: [Assessments]
@@ -343,7 +343,7 @@
 
 /**
  * @swagger
- * /assessments/participant/{participantId}/assessor/{assessorId}:
+ * /api/assessments/participant/{participantId}/assessor/{assessorId}:
  *   delete:
  *     summary: Delete assessments by participant and assessor
  *     tags: [Assessments]

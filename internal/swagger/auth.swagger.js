@@ -14,10 +14,137 @@
  *         - password
  *         - role
  *       properties:
- *           content:
-           application/json:
-             schema:
-               $ref: '#/components/schemas/ErrorResponse'
+ *         id:
+ *           type: integer
+ *           description: Unique identifier for the user
+ *         username:
+ *           type: string
+ *           description: Username
+ *         password:
+ *           type: string
+ *           description: User password
+ *         role:
+ *           type: string
+ *           enum: [admin, assessor, participant]
+ *           description: User role
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ *     
+ *     LoginRequest:
+ *       type: object
+ *       required:
+ *         - username
+ *         - password
+ *       properties:
+ *         username:
+ *           type: string
+ *           example: "admin123"
+ *         password:
+ *           type: string
+ *           example: "password123"
+ *     
+ *     LoginResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         message:
+ *           type: string
+ *           example: "Login successful"
+ *         data:
+ *           type: object
+ *           properties:
+ *             user:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 username:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *             accessToken:
+ *               type: string
+ *             refreshToken:
+ *               type: string
+ *     
+ *     SuccessResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         message:
+ *           type: string
+ *           example: "Operation successful"
+ *         data:
+ *           type: object
+ *     
+ *     ErrorResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: false
+ *         message:
+ *           type: string
+ *           example: "Error message"
+ *         error:
+ *           type: string
+ *           example: "Detailed error information"
+ *     
+ *     UserBasic:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         username:
+ *           type: string
+ *         role:
+ *           type: string
+ *     
+ *     AssessorBasic:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         nama:
+ *           type: string
+ *         nip:
+ *           type: string
+ *     
+ *     ParticipantBasic:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         nama:
+ *           type: string
+ *         nip:
+ *           type: string
+ *         no_akun:
+ *           type: string
+ *     
+ *     Pagination:
+ *       type: object
+ *       properties:
+ *         currentPage:
+ *           type: integer
+ *         totalPages:
+ *           type: integer
+ *         totalItems:
+ *           type: integer
+ *         limit:
+ *           type: integer
+ *         hasNextPage:
+ *           type: boolean
+ *         hasPrevPage:
+ *           type: boolean
  */
 
 /**
@@ -212,16 +339,6 @@
  *                   type: string
  *                 role:
  *                   type: string
- *     
- *     ErrorResponse:
- *       type: object
- *       properties:
- *         success:
- *           type: boolean
- *           example: false
- *         message:
- *           type: string
- *           example: "Error message"
  */
 
 /**
@@ -342,7 +459,7 @@
 
 /**
  * @swagger
- * /auth/me:
+ * /api/auth/me:
  *   get:
  *     summary: Get current user profile
  *     tags: [Authentication]

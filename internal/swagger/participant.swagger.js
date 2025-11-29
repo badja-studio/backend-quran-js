@@ -147,7 +147,7 @@
 
 /**
  * @swagger
- * /participants:
+ * /api/participants:
  *   get:
  *     summary: Get all participants with pagination, filtering, and search
  *     tags: [Participants]
@@ -236,7 +236,7 @@
 
 /**
  * @swagger
- * /participants/profile:
+ * /api/participants/profile:
  *   get:
  *     summary: Get current user's participant profile
  *     tags: [Participants]
@@ -264,7 +264,7 @@
 
 /**
  * @swagger
- * /participants/not-assessed:
+ * /api/participants/not-assessed:
  *   get:
  *     summary: Get participants that have not been assessed yet
  *     tags: [Participants]
@@ -296,7 +296,7 @@
 
 /**
  * @swagger
- * /participants/ready-to-assess:
+ * /api/participants/ready-to-assess:
  *   get:
  *     summary: Get participants that are ready to be assessed (assigned to assessor but not assessed)
  *     tags: [Participants]
@@ -324,7 +324,7 @@
 
 /**
  * @swagger
- * /participants/{id}:
+ * /api/participants/{id}:
  *   get:
  *     summary: Get participant by ID
  *     tags: [Participants]
@@ -390,7 +390,7 @@
 
 /**
  * @swagger
- * /participants/{id}/assign-assessor:
+ * /api/participants/{id}/assign-assessor:
  *   put:
  *     summary: Assign assessor to participant
  *     tags: [Participants]
@@ -427,7 +427,7 @@
 
 /**
  * @swagger
- * /participants/{id}/status:
+ * /api/participants/{id}/status:
  *   put:
  *     summary: Update participant status
  *     tags: [Participants]
@@ -464,7 +464,7 @@
 
 /**
  * @swagger
- * /participants/statistics:
+ * /api/participants/statistics:
  *   get:
  *     summary: Get participant statistics
  *     tags: [Participants]

@@ -83,7 +83,7 @@ db-fresh:
 # Inject test data (15 assessee with different statuses)
 db-test:
     @echo "📊 Injecting test data..."
-    docker-compose -f docker-compose.dev.yml exec app npx sequelize-cli db:seed --seed 20241127-test-data.js
+    docker-compose -f docker-compose.dev.yml exec app npx sequelize-cli db:seed
     @echo "✅ Test data injected!"
     @echo "   - 5 assessee BELUM ASESMEN (TST001-TST005)"
     @echo "   - 5 assessee SIAP ASESMEN (TST006-TST010)"
