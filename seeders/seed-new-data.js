@@ -432,9 +432,22 @@ async function seedData() {
   }
 }
 
-module.exports = { seedData };
+// Sequelize CLI compatible exports
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    return seedData();
+  },
 
-// Run seeding if this file is executed directly
+  down: async (queryInterface, Sequelize) => {
+    // Clear data in reverse order
+    await queryInterface.bulkDelete('assessments', null, {});
+    await queryInterface.bulkDelete('participants', null, {});
+    await queryInterface.bulkDelete('assessors', null, {});
+    await queryInterface.bulkDelete('users', null, {});
+  }
+};
+
+// Run seeding directly if called as script
 if (require.main === module) {
   seedData()
     .then(() => {

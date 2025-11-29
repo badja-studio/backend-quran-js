@@ -32,7 +32,7 @@ class AuthUsecase {
       const token = jwt.sign(
         { id: user.id, username: user.username, role: user.role },
         config.jwt.secret,
-        { expiresIn: config.jwt.expiresIn }
+        { expiresIn: config.jwt.accessExpiresIn }
       );
 
       return {
@@ -81,6 +81,7 @@ class AuthUsecase {
 
       // Check password
       const isPasswordValid = await bcrypt.compare(password, user.password);
+      
       if (!isPasswordValid) {
         return {
           success: false,
@@ -93,7 +94,7 @@ class AuthUsecase {
       const token = jwt.sign(
         { id: user.id, username: user.username, role: user.role },
         config.jwt.secret,
-        { expiresIn: config.jwt.expiresIn }
+        { expiresIn: config.jwt.accessExpiresIn }
       );
 
       return {
@@ -145,7 +146,7 @@ class AuthUsecase {
       const newToken = jwt.sign(
         { id: user.id, username: user.username, role: user.role },
         config.jwt.secret,
-        { expiresIn: config.jwt.expiresIn }
+        { expiresIn: config.jwt.accessExpiresIn }
       );
 
       return {
