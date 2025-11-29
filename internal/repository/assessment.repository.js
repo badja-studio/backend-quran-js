@@ -9,25 +9,111 @@ class AssessmentRepository {
       search = '',
       sortBy = 'createdAt',
       sortOrder = 'DESC',
-      filters = {}
+      filters = []
     } = options;
 
     const offset = (page - 1) * limit;
 
-    // Build where clause for filters
+    // Map sortBy to actual field names
+    const sortFieldMapping = {
+      'createdAt': 'createdAt',
+      'updatedAt': 'updatedAt',
+      'hasil_assessment': 'hasil_assessment',
+      'catatan': 'catatan',
+      'tanggal_assessment': 'tanggal_assessment'
+    };
+
+    const orderField = sortFieldMapping[sortBy] || 'createdAt';
+
+    // Build advanced filters - support array of objects with field, op, value
     const filterWhere = {};
-    Object.keys(filters).forEach(key => {
-      if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
-        filterWhere[key] = filters[key];
-      }
-    });
+    
+    if (Array.isArray(filters) && filters.length > 0) {
+      // Process each filter condition
+      filters.forEach(filter => {
+        const { field, op, value } = filter;
+        
+        if (!field || !op || value === undefined || value === null || value === '') {
+          return; // Skip invalid filters
+        }
+
+        // Map operators to Sequelize operators
+        let sequelizeOp;
+        switch(op.toLowerCase()) {
+          case 'eq': case '=':
+            sequelizeOp = Op.eq;
+            break;
+          case 'ne': case '!=':
+            sequelizeOp = Op.ne;
+            break;
+          case 'gt': case '>':
+            sequelizeOp = Op.gt;
+            break;
+          case 'gte': case '>=':
+            sequelizeOp = Op.gte;
+            break;
+          case 'lt': case '<':
+            sequelizeOp = Op.lt;
+            break;
+          case 'lte': case '<=':
+            sequelizeOp = Op.lte;
+            break;
+          case 'like':
+            sequelizeOp = Op.like;
+            break;
+          case 'ilike':
+            sequelizeOp = Op.iLike;
+            break;
+          case 'in':
+            sequelizeOp = Op.in;
+            break;
+          case 'notin': case 'not_in':
+            sequelizeOp = Op.notIn;
+            break;
+          case 'between':
+            sequelizeOp = Op.between;
+            break;
+          case 'notbetween': case 'not_between':
+            sequelizeOp = Op.notBetween;
+            break;
+          case 'isnull': case 'is_null':
+            filterWhere[field] = { [Op.is]: null };
+            return;
+          case 'isnotnull': case 'is_not_null':
+            filterWhere[field] = { [Op.not]: null };
+            return;
+          default:
+            return; // Skip unknown operators
+        }
+
+        // Handle special cases for like operations
+        let finalValue = value;
+        if ((op.toLowerCase() === 'like' || op.toLowerCase() === 'ilike') && 
+            typeof value === 'string' && 
+            !value.includes('%')) {
+          finalValue = `%${value}%`;
+        }
+
+        // Apply filter condition
+        if (filterWhere[field]) {
+          filterWhere[field] = {
+            [Op.and]: [
+              filterWhere[field],
+              { [sequelizeOp]: finalValue }
+            ]
+          };
+        } else {
+          filterWhere[field] = { [sequelizeOp]: finalValue };
+        }
+      });
+    }
 
     // Search in related models
     const includeWhere = [];
     if (search) {
       includeWhere.push({
         model: Participant,
-        as: 'participant',
+        as: 'peserta',
         where: {
           [Op.or]: [
             { nama: { [Op.iLike]: `%${search}%` } },
@@ -39,7 +125,7 @@ class AssessmentRepository {
     } else {
       includeWhere.push({
         model: Participant,
-        as: 'participant',
+        as: 'peserta',
         attributes: ['id', 'nama', 'nip']
       });
     }
@@ -55,7 +141,7 @@ class AssessmentRepository {
       include: includeWhere,
       limit: parseInt(limit),
       offset: offset,
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [[orderField, sortOrder.toUpperCase()]],
       distinct: true
     });
 
@@ -75,7 +161,7 @@ class AssessmentRepository {
       include: [
         {
           model: Participant,
-          as: 'participant',
+          as: 'peserta',
           attributes: ['id', 'nama', 'nip']
         },
         {
@@ -97,12 +183,23 @@ class AssessmentRepository {
 
     const offset = (page - 1) * limit;
 
+    // Map sortBy to actual field names
+    const sortFieldMapping = {
+      'createdAt': 'createdAt',
+      'updatedAt': 'updatedAt',
+      'hasil_assessment': 'hasil_assessment',
+      'catatan': 'catatan',
+      'tanggal_assessment': 'tanggal_assessment'
+    };
+
+    const orderField = sortFieldMapping[sortBy] || 'createdAt';
+
     const { count, rows } = await Assessment.findAndCountAll({
       where: { peserta_id: participantId },
       include: [
         {
           model: Participant,
-          as: 'participant',
+          as: 'peserta',
           attributes: ['id', 'nama', 'nip']
         },
         {
@@ -113,7 +210,7 @@ class AssessmentRepository {
       ],
       limit: parseInt(limit),
       offset: offset,
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [[orderField, sortOrder.toUpperCase()]],
       distinct: true
     });
 
@@ -139,12 +236,23 @@ class AssessmentRepository {
 
     const offset = (page - 1) * limit;
 
+    // Map sortBy to actual field names
+    const sortFieldMapping = {
+      'createdAt': 'createdAt',
+      'updatedAt': 'updatedAt',
+      'hasil_assessment': 'hasil_assessment',
+      'catatan': 'catatan',
+      'tanggal_assessment': 'tanggal_assessment'
+    };
+
+    const orderField = sortFieldMapping[sortBy] || 'createdAt';
+
     // Search in participant name/nip
     const includeWhere = [];
     if (search) {
       includeWhere.push({
         model: Participant,
-        as: 'participant',
+        as: 'peserta',
         where: {
           [Op.or]: [
             { nama: { [Op.iLike]: `%${search}%` } },
@@ -157,7 +265,7 @@ class AssessmentRepository {
     } else {
       includeWhere.push({
         model: Participant,
-        as: 'participant',
+        as: 'peserta',
         attributes: ['id', 'nama', 'nip']
       });
     }
@@ -173,7 +281,7 @@ class AssessmentRepository {
       include: includeWhere,
       limit: parseInt(limit),
       offset: offset,
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [[orderField, sortOrder.toUpperCase()]],
       distinct: true
     });
 
@@ -264,7 +372,7 @@ class AssessmentRepository {
       include: [
         {
           model: Participant,
-          as: 'participant',
+          as: 'peserta',
           attributes: ['id', 'nama', 'nip']
         }
       ],

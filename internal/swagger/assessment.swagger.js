@@ -105,14 +105,39 @@
  *         in: query
  *         schema:
  *           type: string
+ *         description: Search in participant names and NIPs
+ *       - name: sortBy
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, updatedAt, hasil_assessment, catatan, tanggal_assessment]
+ *           default: createdAt
+ *         description: Field to sort by
+ *       - name: sortOrder
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *           default: DESC
+ *         description: Sort order (ASC or DESC)
  *       - name: peserta_id
  *         in: query
  *         schema:
- *           type: integer
+ *           type: array
+ *           items:
+ *             type: integer
+ *         style: form
+ *         explode: true
+ *         description: Filter by participant IDs (supports multiple values)
  *       - name: asesor_id
  *         in: query
  *         schema:
- *           type: integer
+ *           type: array
+ *           items:
+ *             type: integer
+ *         style: form
+ *         explode: true
+ *         description: Filter by assessor IDs (supports multiple values)
  *     responses:
  *       200:
  *         description: Success

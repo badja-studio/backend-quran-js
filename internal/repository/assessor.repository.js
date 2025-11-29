@@ -9,10 +9,22 @@ class AssessorRepository {
       search = '',
       sortBy = 'createdAt',
       sortOrder = 'DESC',
-      filters = {}
+      filters = []
     } = options;
 
     const offset = (page - 1) * limit;
+
+    // Map sortBy to actual field names
+    const sortFieldMapping = {
+      'createdAt': 'createdAt',
+      'updatedAt': 'updatedAt',
+      'name': 'name',
+      'username': 'username',
+      'email': 'email',
+      'no_telepon': 'no_telepon'
+    };
+
+    const orderField = sortFieldMapping[sortBy] || 'createdAt';
 
     // Build where clause for search
     const searchWhere = search ? {
@@ -24,13 +36,88 @@ class AssessorRepository {
       ]
     } : {};
 
-    // Build where clause for filters
+    // Build advanced filters - support array of objects with field, op, value
     const filterWhere = {};
-    Object.keys(filters).forEach(key => {
-      if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
-        filterWhere[key] = filters[key];
-      }
-    });
+    
+    if (Array.isArray(filters) && filters.length > 0) {
+      // Process each filter condition
+      filters.forEach(filter => {
+        const { field, op, value } = filter;
+        
+        if (!field || !op || value === undefined || value === null || value === '') {
+          return; // Skip invalid filters
+        }
+
+        // Map operators to Sequelize operators
+        let sequelizeOp;
+        switch(op.toLowerCase()) {
+          case 'eq': case '=':
+            sequelizeOp = Op.eq;
+            break;
+          case 'ne': case '!=':
+            sequelizeOp = Op.ne;
+            break;
+          case 'gt': case '>':
+            sequelizeOp = Op.gt;
+            break;
+          case 'gte': case '>=':
+            sequelizeOp = Op.gte;
+            break;
+          case 'lt': case '<':
+            sequelizeOp = Op.lt;
+            break;
+          case 'lte': case '<=':
+            sequelizeOp = Op.lte;
+            break;
+          case 'like':
+            sequelizeOp = Op.like;
+            break;
+          case 'ilike':
+            sequelizeOp = Op.iLike;
+            break;
+          case 'in':
+            sequelizeOp = Op.in;
+            break;
+          case 'notin': case 'not_in':
+            sequelizeOp = Op.notIn;
+            break;
+          case 'between':
+            sequelizeOp = Op.between;
+            break;
+          case 'notbetween': case 'not_between':
+            sequelizeOp = Op.notBetween;
+            break;
+          case 'isnull': case 'is_null':
+            filterWhere[field] = { [Op.is]: null };
+            return;
+          case 'isnotnull': case 'is_not_null':
+            filterWhere[field] = { [Op.not]: null };
+            return;
+          default:
+            return; // Skip unknown operators
+        }
+
+        // Handle special cases for like operations
+        let finalValue = value;
+        if ((op.toLowerCase() === 'like' || op.toLowerCase() === 'ilike') && 
+            typeof value === 'string' && 
+            !value.includes('%')) {
+          finalValue = `%${value}%`;
+        }
+
+        // Apply filter condition
+        if (filterWhere[field]) {
+          filterWhere[field] = {
+            [Op.and]: [
+              filterWhere[field],
+              { [sequelizeOp]: finalValue }
+            ]
+          };
+        } else {
+          filterWhere[field] = { [sequelizeOp]: finalValue };
+        }
+      });
+    }
 
     const whereClause = {
       ...searchWhere,
@@ -53,7 +140,7 @@ class AssessorRepository {
       ],
       limit: parseInt(limit),
       offset: offset,
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [[orderField, sortOrder.toUpperCase()]],
       distinct: true
     });
 
@@ -110,6 +197,26 @@ class AssessorRepository {
 
     const offset = (page - 1) * limit;
 
+    // Map sortBy to actual field names (participant fields)
+    const sortFieldMapping = {
+      'createdAt': 'createdAt',
+      'updatedAt': 'updatedAt',
+      'nama': 'nama',
+      'nip': 'nip',
+      'no_akun': 'no_akun',
+      'status': 'status',
+      'jenis_kelamin': 'jenis_kelamin',
+      'tempat_lahir': 'tempat_lahir',
+      'tanggal_lahir': 'tanggal_lahir',
+      'agama': 'agama',
+      'pangkat': 'pangkat',
+      'golongan': 'golongan',
+      'jabatan': 'jabatan',
+      'unit_kerja': 'unit_kerja'
+    };
+
+    const orderField = sortFieldMapping[sortBy] || 'createdAt';
+
     // Build participant search where clause
     const participantSearchWhere = search ? {
       [Op.or]: [
@@ -140,7 +247,7 @@ class AssessorRepository {
       ],
       limit: parseInt(limit),
       offset: offset,
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [[orderField, sortOrder.toUpperCase()]],
       distinct: true
     });
 

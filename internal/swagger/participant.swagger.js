@@ -172,35 +172,88 @@
  *           type: string
  *         description: Search term for name, NIP, account number, etc.
  *       - in: query
+ *         name: filters
+ *         schema:
+ *           type: string
+ *           example: '[{"field":"jenis_kelamin","op":"eq","value":"P"},{"field":"nama","op":"ilike","value":"Ahmad"}]'
+ *         description: |
+ *           Advanced filters as JSON string array of objects with field, op (operator), and value.
+ *           Supported operators: eq (equals), ne (not equals), gt (greater than), gte (greater than or equal), 
+ *           lt (less than), lte (less than or equal), like (pattern matching), ilike (case insensitive pattern), 
+ *           in (value in array), notin (value not in array), between (value between range), 
+ *           notbetween (value not between range), isnull (is null), isnotnull (is not null).
+ *           Example: filters=[{"field":"status","op":"eq","value":"BELUM"},{"field":"jenis_kelamin","op":"in","value":["L","P"]}]
+ *       - in: query
  *         name: sortBy
  *         schema:
  *           type: string
- *           default: created_at
- *         description: Field to sort by
+ *           enum: [createdAt, updatedAt, nama, nip, no_akun, status, jenis_kelamin, tempat_lahir, tanggal_lahir, agama, pangkat, golongan, jabatan, unit_kerja]
+ *           default: createdAt
+ *         description: Field to sort by (supports all participant fields)
  *       - in: query
  *         name: sortOrder
  *         schema:
  *           type: string
  *           enum: [ASC, DESC]
  *           default: DESC
- *         description: Sort order
+ *         description: Sort order (ASC for ascending, DESC for descending)
  *       - in: query
  *         name: jenis_kelamin
  *         schema:
- *           type: string
- *           enum: [L, P]
- *         description: Filter by gender
+ *           type: array
+ *           items:
+ *             type: string
+ *             enum: [L, P]
+ *         style: form
+ *         explode: true
+ *         description: Filter by gender (supports array - use jenis_kelamin[]=L&jenis_kelamin[]=P)
  *       - in: query
  *         name: provinsi
  *         schema:
- *           type: string
- *         description: Filter by province
+ *           type: array
+ *           items:
+ *             type: string
+ *         style: form
+ *         explode: true
+ *         description: Filter by province (supports multiple values)
  *       - in: query
  *         name: status
  *         schema:
- *           type: string
- *           enum: [SUDAH, BELUM]
- *         description: Filter by assessment status
+ *           type: array
+ *           items:
+ *             type: string
+ *             enum: [SUDAH, BELUM]
+ *         style: form
+ *         explode: true
+ *         description: Filter by assessment status (supports multiple values)
+ *       - in: query
+ *         name: level
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         style: form
+ *         explode: true
+ *         description: Filter by skill level (supports multiple values)
+ *       - in: query
+ *         name: jenjang
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         style: form
+ *         explode: true
+ *         description: Filter by education level (supports multiple values)
+ *       - in: query
+ *         name: tahun_lulus
+ *         schema:
+ *           type: object
+ *           properties:
+ *             min:
+ *               type: integer
+ *             max:
+ *               type: integer
+ *         description: Filter by graduation year range (use tahun_lulus[min]=2000&tahun_lulus[max]=2020)
  *     responses:
  *       200:
  *         description: Participants retrieved successfully

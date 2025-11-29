@@ -3,18 +3,28 @@ const assessmentUsecase = require('../usecase/assessment.usecase');
 class AssessmentController {
   async getAllAssessments(req, res) {
     try {
+      // Parse filters from query parameter
+      let filters = [];
+      if (req.query.filters) {
+        try {
+          if (typeof req.query.filters === 'string') {
+            filters = JSON.parse(req.query.filters);
+          } else if (Array.isArray(req.query.filters)) {
+            filters = req.query.filters;
+          }
+        } catch (error) {
+          console.error('Error parsing filters:', error);
+          filters = [];
+        }
+      }
+
       const options = {
         page: parseInt(req.query.page) || 1,
         limit: parseInt(req.query.limit) || 10,
         search: req.query.search || '',
-        sortBy: req.query.sortBy || 'created_at',
+        sortBy: req.query.sortBy || 'createdAt',
         sortOrder: req.query.sortOrder || 'DESC',
-        filters: {
-          peserta_id: req.query.peserta_id,
-          asesor_id: req.query.asesor_id,
-          kategori: req.query.kategori,
-          huruf: req.query.huruf
-        }
+        filters: filters
       };
 
       const result = await assessmentUsecase.getAllAssessments(options);

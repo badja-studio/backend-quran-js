@@ -9,7 +9,7 @@ class ParticipantRepository {
       search = '',
       sortBy = 'createdAt',
       sortOrder = 'DESC',
-      filters = {}
+      filters = []
     } = options;
 
     // Mapping untuk field sorting yang valid
@@ -19,11 +19,17 @@ class ParticipantRepository {
       'nama': 'nama',
       'nip': 'nip',
       'no_akun': 'no_akun',
-      'status': 'status'
+      'status': 'status',
+      'jenis_kelamin': 'jenis_kelamin',
+      'jabatan': 'jabatan',
+      'jenjang': 'jenjang',
+      'level': 'level',
+      'provinsi': 'provinsi',
+      'kab_kota': 'kab_kota',
+      'tahun_lulus': 'tahun_lulus'
     };
 
     const orderField = validSortFields[sortBy] || 'createdAt';
-
     const offset = (page - 1) * limit;
 
     // Build where clause for search
@@ -39,13 +45,99 @@ class ParticipantRepository {
       ]
     } : {};
 
-    // Build where clause for filters
+    // Build advanced filters - support array of objects with field, op, value
     const filterWhere = {};
-    Object.keys(filters).forEach(key => {
-      if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
-        filterWhere[key] = filters[key];
-      }
-    });
+    
+    if (Array.isArray(filters) && filters.length > 0) {
+      // Process each filter condition
+      filters.forEach(filter => {
+        const { field, op, value } = filter;
+        
+        if (!field || !op || value === undefined || value === null || value === '') {
+          return; // Skip invalid filters
+        }
+
+        // Map operators to Sequelize operators
+        let sequelizeOp;
+        switch(op.toLowerCase()) {
+          case 'eq': // equals
+          case '=':
+            sequelizeOp = Op.eq;
+            break;
+          case 'ne': // not equals
+          case '!=':
+            sequelizeOp = Op.ne;
+            break;
+          case 'gt': // greater than
+          case '>':
+            sequelizeOp = Op.gt;
+            break;
+          case 'gte': // greater than or equal
+          case '>=':
+            sequelizeOp = Op.gte;
+            break;
+          case 'lt': // less than
+          case '<':
+            sequelizeOp = Op.lt;
+            break;
+          case 'lte': // less than or equal
+          case '<=':
+            sequelizeOp = Op.lte;
+            break;
+          case 'like': // case sensitive pattern matching
+            sequelizeOp = Op.like;
+            break;
+          case 'ilike': // case insensitive pattern matching
+            sequelizeOp = Op.iLike;
+            break;
+          case 'in': // value in array
+            sequelizeOp = Op.in;
+            break;
+          case 'notin': // value not in array
+          case 'not_in':
+            sequelizeOp = Op.notIn;
+            break;
+          case 'between': // value between two values
+            sequelizeOp = Op.between;
+            break;
+          case 'notbetween': // value not between two values
+          case 'not_between':
+            sequelizeOp = Op.notBetween;
+            break;
+          case 'isnull': // is null
+          case 'is_null':
+            filterWhere[field] = { [Op.is]: null };
+            return;
+          case 'isnotnull': // is not null
+          case 'is_not_null':
+            filterWhere[field] = { [Op.not]: null };
+            return;
+          default:
+            return; // Skip unknown operators
+        }
+
+        // Handle special cases for like operations
+        let finalValue = value;
+        if ((op.toLowerCase() === 'like' || op.toLowerCase() === 'ilike') && 
+            typeof value === 'string' && 
+            !value.includes('%')) {
+          finalValue = `%${value}%`; // Add wildcards if not present
+        }
+
+        // Apply filter condition
+        if (filterWhere[field]) {
+          // If field already has conditions, combine with AND
+          filterWhere[field] = {
+            [Op.and]: [
+              filterWhere[field],
+              { [sequelizeOp]: finalValue }
+            ]
+          };
+        } else {
+          filterWhere[field] = { [sequelizeOp]: finalValue };
+        }
+      });
+    }
 
     const whereClause = {
       ...searchWhere,
@@ -68,7 +160,7 @@ class ParticipantRepository {
       ],
       limit: parseInt(limit),
       offset: offset,
-      order: [["createdAt", sortOrder.toUpperCase()]],
+      order: [[orderField, sortOrder.toUpperCase()]],
       distinct: true
     });
 
@@ -124,6 +216,26 @@ class ParticipantRepository {
 
     const offset = (page - 1) * limit;
 
+    // Map sortBy to actual field names
+    const sortFieldMapping = {
+      'createdAt': 'createdAt',
+      'updatedAt': 'updatedAt',
+      'nama': 'nama',
+      'nip': 'nip',
+      'no_akun': 'no_akun',
+      'status': 'status',
+      'jenis_kelamin': 'jenis_kelamin',
+      'tempat_lahir': 'tempat_lahir',
+      'tanggal_lahir': 'tanggal_lahir',
+      'agama': 'agama',
+      'pangkat': 'pangkat',
+      'golongan': 'golongan',
+      'jabatan': 'jabatan',
+      'unit_kerja': 'unit_kerja'
+    };
+
+    const orderField = sortFieldMapping[sortBy] || 'createdAt';
+
     const searchWhere = search ? {
       [Op.or]: [
         { nama: { [Op.iLike]: `%${search}%` } },
@@ -153,7 +265,7 @@ class ParticipantRepository {
       ],
       limit: parseInt(limit),
       offset: offset,
-      order: [["createdAt", sortOrder.toUpperCase()]],
+      order: [[orderField, sortOrder.toUpperCase()]],
       distinct: true
     });
 
@@ -178,6 +290,26 @@ class ParticipantRepository {
     } = options;
 
     const offset = (page - 1) * limit;
+
+    // Map sortBy to actual field names
+    const sortFieldMapping = {
+      'createdAt': 'createdAt',
+      'updatedAt': 'updatedAt',
+      'nama': 'nama',
+      'nip': 'nip',
+      'no_akun': 'no_akun',
+      'status': 'status',
+      'jenis_kelamin': 'jenis_kelamin',
+      'tempat_lahir': 'tempat_lahir',
+      'tanggal_lahir': 'tanggal_lahir',
+      'agama': 'agama',
+      'pangkat': 'pangkat',
+      'golongan': 'golongan',
+      'jabatan': 'jabatan',
+      'unit_kerja': 'unit_kerja'
+    };
+
+    const orderField = sortFieldMapping[sortBy] || 'createdAt';
 
     const searchWhere = search ? {
       [Op.or]: [
@@ -209,7 +341,7 @@ class ParticipantRepository {
       ],
       limit: parseInt(limit),
       offset: offset,
-      order: [["createdAt", sortOrder.toUpperCase()]],
+      order: [[orderField, sortOrder.toUpperCase()]],
       distinct: true
     });
 

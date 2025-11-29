@@ -3,21 +3,31 @@ const participantUsecase = require('../usecase/participant.usecase');
 class ParticipantController {
   async getAllParticipants(req, res) {
     try {
+      // Parse filters from query parameter
+      let filters = [];
+      if (req.query.filters) {
+        try {
+          // If filters is passed as JSON string
+          if (typeof req.query.filters === 'string') {
+            filters = JSON.parse(req.query.filters);
+          }
+          // If filters is already parsed (from body in POST requests)
+          else if (Array.isArray(req.query.filters)) {
+            filters = req.query.filters;
+          }
+        } catch (error) {
+          console.error('Error parsing filters:', error);
+          filters = [];
+        }
+      }
+
       const options = {
         page: parseInt(req.query.page) || 1,
         limit: parseInt(req.query.limit) || 10,
         search: req.query.search || '',
-        sortBy: req.query.sortBy || 'created_at',
+        sortBy: req.query.sortBy || 'createdAt',
         sortOrder: req.query.sortOrder || 'DESC',
-        filters: {
-          jenis_kelamin: req.query.jenis_kelamin,
-          provinsi: req.query.provinsi,
-          kab_kota: req.query.kab_kota,
-          jenjang: req.query.jenjang,
-          level: req.query.level,
-          status: req.query.status,
-          asesor_id: req.query.asesor_id
-        }
+        filters: filters
       };
 
       const result = await participantUsecase.getAllParticipants(options);

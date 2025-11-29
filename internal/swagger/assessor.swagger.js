@@ -122,15 +122,34 @@
  *         name: sortBy
  *         schema:
  *           type: string
- *           default: created_at
- *         description: Field to sort by
+ *           enum: [createdAt, updatedAt, name, username, email, no_telepon]
+ *           default: createdAt
+ *         description: Field to sort by (supports all assessor fields)
  *       - in: query
  *         name: sortOrder
  *         schema:
  *           type: string
  *           enum: [ASC, DESC]
  *           default: DESC
- *         description: Sort order
+ *         description: Sort order (ASC for ascending, DESC for descending)
+ *       - in: query
+ *         name: name
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         style: form
+ *         explode: true
+ *         description: Filter by assessor name (supports multiple values)
+ *       - in: query
+ *         name: email
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         style: form
+ *         explode: true
+ *         description: Filter by email (supports multiple values)
  *     responses:
  *       200:
  *         description: Assessors retrieved successfully
