@@ -1,30 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const participantController = require('../controller/participant.controller');
-const authMiddleware = require('../middleware/auth.middleware');
+const { authenticateToken } = require('../middleware/auth.middleware');
 
 // Apply authentication middleware to all routes
-router.use(authMiddleware);
+router.use(authenticateToken);
 
 // GET routes
-router.get('/', participantController.getAllParticipants);
-router.get('/profile', participantController.getMyProfile);
-router.get('/not-assessed', participantController.getNotAssessedParticipants);
-router.get('/ready-to-assess', participantController.getReadyToAssessParticipants);
-router.get('/statistics', participantController.getStatistics);
-router.get('/my-assessments', participantController.getMyAssessments);
-router.get('/:id', participantController.getParticipantById);
-router.get('/:id/assessments', participantController.getParticipantAssessments);
+router.get('/', (req, res) => participantController.getAllParticipants(req, res));
+router.get('/profile', (req, res) => participantController.getMyProfile(req, res));
+router.get('/not-assessed', (req, res) => participantController.getNotAssessedParticipants(req, res));
+router.get('/ready-to-assess', (req, res) => participantController.getReadyToAssessParticipants(req, res));
+router.get('/statistics', (req, res) => participantController.getStatistics(req, res));
+router.get('/my-assessments', (req, res) => participantController.getMyAssessments(req, res));
+router.get('/:id', (req, res) => participantController.getParticipantById(req, res));
+router.get('/:id/assessments', (req, res) => participantController.getParticipantAssessments(req, res));
 
 // POST routes
-router.post('/', participantController.createParticipant);
+router.post('/', (req, res) => participantController.createParticipant(req, res));
 
 // PUT routes
-router.put('/:id', participantController.updateParticipant);
-router.put('/:id/assign-assessor', participantController.assignAssessor);
-router.put('/:id/status', participantController.updateStatus);
+router.put('/:id', (req, res) => participantController.updateParticipant(req, res));
+router.put('/:id/assign-assessor', (req, res) => participantController.assignAssessor(req, res));
+router.put('/:id/status', (req, res) => participantController.updateStatus(req, res));
 
 // DELETE routes
-router.delete('/:id', participantController.deleteParticipant);
+router.delete('/:id', (req, res) => participantController.deleteParticipant(req, res));
 
 module.exports = router;

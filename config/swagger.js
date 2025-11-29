@@ -76,40 +76,16 @@ const options = {
         description: 'User authentication endpoints (register, login, refresh token)'
       },
       {
-        name: 'Admin',
-        description: 'Admin management endpoints (manage users, criteria, schedules)'
+        name: 'Participants',
+        description: 'Participant management endpoints'
       },
       {
-        name: 'Admin - Criteria Groups',
-        description: 'Manage criteria groups (Admin only)'
+        name: 'Assessors',
+        description: 'Assessor management endpoints'
       },
       {
-        name: 'Admin - Criteria',
-        description: 'Manage individual criteria (Admin only)'
-      },
-      {
-        name: 'Admin - Schedules',
-        description: 'Manage assessment schedules (Admin only)'
-      },
-      {
-        name: 'Admin - Assessees',
-        description: 'Manage assessees (Admin only)'
-      },
-      {
-        name: 'Admin - Assessors',
-        description: 'Manage assessors (Admin only)'
-      },
-      {
-        name: 'Assessor',
-        description: 'Assessor endpoints (view assessees, submit assessments)'
-      },
-      {
-        name: 'Assessee',
-        description: 'Assessee endpoints (view profile, schedule, assessments)'
-      },
-      {
-        name: 'Surahs',
-        description: 'Surah management endpoints'
+        name: 'Assessments',
+        description: 'Assessment management endpoints'
       },
       {
         name: 'Health',

@@ -1,31 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const assessorController = require('../controller/assessor.controller');
-const authMiddleware = require('../middleware/auth.middleware');
+const { authenticateToken } = require('../middleware/auth.middleware');
 
 // Apply authentication middleware to all routes
-router.use(authMiddleware);
+router.use(authenticateToken);
 
 // GET routes
-router.get('/', assessorController.getAllAssessors);
-router.get('/profile', assessorController.getMyProfile);
-router.get('/participants', assessorController.getMyParticipants);
-router.get('/statistics', assessorController.getMyStatistics);
-router.get('/:id', assessorController.getAssessorById);
-router.get('/:id/participants', assessorController.getAssessorParticipants);
-router.get('/:id/statistics', assessorController.getAssessorStatistics);
+router.get('/', (req, res) => assessorController.getAllAssessors(req, res));
+router.get('/profile', (req, res) => assessorController.getMyProfile(req, res));
+router.get('/participants', (req, res) => assessorController.getMyParticipants(req, res));
+router.get('/statistics', (req, res) => assessorController.getMyStatistics(req, res));
+router.get('/:id', (req, res) => assessorController.getAssessorById(req, res));
+router.get('/:id/participants', (req, res) => assessorController.getAssessorParticipants(req, res));
+router.get('/:id/statistics', (req, res) => assessorController.getAssessorStatistics(req, res));
 
 // POST routes
-router.post('/', assessorController.createAssessor);
-router.post('/assign-participant', assessorController.assignParticipantToMe);
-router.post('/:id/assign-participant', assessorController.assignParticipant);
+router.post('/', (req, res) => assessorController.createAssessor(req, res));
+router.post('/assign-participant', (req, res) => assessorController.assignParticipantToMe(req, res));
+router.post('/:id/assign-participant', (req, res) => assessorController.assignParticipant(req, res));
 
 // PUT routes
-router.put('/:id', assessorController.updateAssessor);
-router.put('/:id/update-counts', assessorController.updateParticipantCounts);
-router.put('/:id/unassign-participant', assessorController.unassignParticipant);
+router.put('/:id', (req, res) => assessorController.updateAssessor(req, res));
+router.put('/:id/update-counts', (req, res) => assessorController.updateParticipantCounts(req, res));
+router.put('/:id/unassign-participant', (req, res) => assessorController.unassignParticipant(req, res));
 
 // DELETE routes
-router.delete('/:id', assessorController.deleteAssessor);
+router.delete('/:id', (req, res) => assessorController.deleteAssessor(req, res));
 
 module.exports = router;

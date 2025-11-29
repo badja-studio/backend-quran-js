@@ -101,60 +101,7 @@ const authUseCase = require('../usecase/auth.usecase');
 
 class AuthController {
     /**
-     * @swagger
-     * /api/v1/auth/register:
-     *   post:
-     *     summary: Register a new user
-     *     tags: [Authentication]
-     *     requestBody:
-     *       required: true
-     *       content:
-     *         application/json:
-     *           schema:
-     *             $ref: '#/components/schemas/RegisterRequest'
-     *     responses:
-     *       200:
-     *         description: User registered successfully
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *               properties:
-     *                 success:
-     *                   type: boolean
-     *                   example: true
-     *                 message:
-     *                   type: string
-     *                   example: User registered successfully
-     *                 data:
-     *                   type: object
-     *                   properties:
-     *                     user:
-     *                       type: object
-     *                       properties:
-     *                         id:
-     *                           type: string
-     *                         email:
-     *                           type: string
-     *                         username:
-     *                           type: string
-     *                         name:
-     *                           type: string
-     *                         fullname:
-     *                           type: string
-     *                         roles:
-     *                           type: string
-     *                     token:
-     *                       type: string
-     *                       description: Access token (same as authToken)
-     *                     authToken:
-     *                       type: string
-     *                       description: Access token valid for 1 day
-     *                     refreshToken:
-     *                       type: string
-     *                       description: Refresh token valid for 30 minutes
-     *       400:
-     *         description: Validation error or user already exists
+     * Register a new user
      */
     async register(req, res) {
         try {
@@ -172,51 +119,7 @@ class AuthController {
     }
 
     /**
-     * @swagger
-     * /api/v1/auth/login:
-     *   post:
-     *     summary: Login user
-     *     tags: [Authentication]
-     *     requestBody:
-     *       required: true
-     *       content:
-     *         application/json:
-     *           schema:
-     *             $ref: '#/components/schemas/LoginRequest'
-     *     responses:
-     *       200:
-     *         description: Login successful
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *               properties:
-     *                 success:
-     *                   type: boolean
-     *                   example: true
-     *                 message:
-     *                   type: string
-     *                   example: Login successful
-     *                 data:
-     *                   type: object
-     *                   properties:
-     *                     token:
-     *                       type: string
-     *                       description: Access token (same as authToken)
-     *                     name:
-     *                       type: string
-     *                       example: John
-     *                     roles:
-     *                       type: string
-     *                       example: Student
-     *                     authToken:
-     *                       type: string
-     *                       description: Access token valid for 1 day
-     *                     refreshToken:
-     *                       type: string
-     *                       description: Refresh token valid for 30 minutes
-     *       400:
-     *         description: Invalid credentials
+     * User login
      */
     async login(req, res) {
         try {
@@ -234,42 +137,7 @@ class AuthController {
     }
 
     /**
-     * @swagger
-     * /api/v1/auth/refresh:
-     *   post:
-     *     summary: Refresh access token
-     *     tags: [Authentication]
-     *     requestBody:
-     *       required: true
-     *       content:
-     *         application/json:
-     *           schema:
-     *             $ref: '#/components/schemas/RefreshTokenRequest'
-     *     responses:
-     *       200:
-     *         description: Token refreshed successfully
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *               properties:
-     *                 success:
-     *                   type: boolean
-     *                   example: true
-     *                 message:
-     *                   type: string
-     *                   example: Token refreshed successfully
-     *                 data:
-     *                   type: object
-     *                   properties:
-     *                     authToken:
-     *                       type: string
-     *                       description: New access token
-     *                     token:
-     *                       type: string
-     *                       description: New access token (same as authToken)
-     *       400:
-     *         description: Invalid or expired refresh token
+     * Refresh access token
      */
     async refreshToken(req, res) {
         try {
@@ -278,6 +146,28 @@ class AuthController {
 
             const statusCode = result.success ? 200 : 400;
             return res.status(statusCode).json(result);
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Internal server error',
+                error: error.message
+            });
+        }
+    }
+
+    async getProfile(req, res) {
+        try {
+            const user = req.user; // Set by auth middleware
+            
+            return res.status(200).json({
+                success: true,
+                message: 'Profile retrieved successfully',
+                data: {
+                    id: user.id,
+                    username: user.username,
+                    role: user.role
+                }
+            });
         } catch (error) {
             return res.status(500).json({
                 success: false,

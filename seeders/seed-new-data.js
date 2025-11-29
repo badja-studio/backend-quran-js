@@ -1,5 +1,5 @@
 const { User, Assessor, Participant, Assessment } = require('../internal/models');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 async function seedUsers() {
   console.log('Seeding users...');

@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const config = require('../../config/config');
-const User = require('../models/user.model');
+const { User } = require('../models');
 
 /**
  * Middleware to verify JWT access token
@@ -70,7 +70,7 @@ const authorizeRoles = (...allowedRoles) => {
             });
         }
 
-        if (!allowedRoles.includes(req.user.roles)) {
+        if (!allowedRoles.includes(req.user.role)) {
             return res.status(403).json({
                 success: false,
                 message: 'You do not have permission to access this resource'
@@ -85,21 +85,21 @@ const authorizeRoles = (...allowedRoles) => {
  * Middleware to check if user is Admin
  */
 const isAdmin = (req, res, next) => {
-    return authorizeRoles('Admin')(req, res, next);
+    return authorizeRoles('admin')(req, res, next);
 };
 
 /**
  * Middleware to check if user is Assessor
  */
 const isAssessor = (req, res, next) => {
-    return authorizeRoles('Assessor')(req, res, next);
+    return authorizeRoles('assessor')(req, res, next);
 };
 
 /**
- * Middleware to check if user is Assessee
+ * Middleware to check if user is Participant
  */
-const isAssessee = (req, res, next) => {
-    return authorizeRoles('Assessee')(req, res, next);
+const isParticipant = (req, res, next) => {
+    return authorizeRoles('participant')(req, res, next);
 };
 
 module.exports = {
@@ -107,5 +107,5 @@ module.exports = {
     authorizeRoles,
     isAdmin,
     isAssessor,
-    isAssessee
+    isParticipant
 };
