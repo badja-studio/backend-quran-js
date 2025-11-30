@@ -266,6 +266,26 @@ class AdminRepository {
       throw new Error(`Failed to check email: ${error.message}`);
     }
   }
+
+  async findByUserId(userId, transaction = null) {
+    try {
+      const admin = await Admin.findOne({
+        where: { user_id: userId },
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'username', 'email', 'role', 'created_at', 'updated_at'],
+          },
+        ],
+        transaction,
+      });
+
+      return admin;
+    } catch (error) {
+      throw new Error(`Failed to find admin by user ID: ${error.message}`);
+    }
+  }
 }
 
 module.exports = AdminRepository;

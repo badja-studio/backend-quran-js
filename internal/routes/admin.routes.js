@@ -9,6 +9,7 @@ const adminController = new AdminController();
 router.use(authenticateToken);
 
 // Admin routes
+router.get('/profile', adminController.getAdminProfile.bind(adminController)); // Must be before /:id route
 router.post('/', adminController.createAdmin.bind(adminController));
 router.get('/', adminController.getAllAdmins.bind(adminController));
 router.get('/:id', adminController.getAdminById.bind(adminController));

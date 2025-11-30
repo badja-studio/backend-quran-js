@@ -8,23 +8,51 @@ class DashboardRepository {
         const [
             totalParticipants,
             completedAssessments,
-            totalAssessors,
-            avgScore
+            totalAssessors
         ] = await Promise.all([
             Participant.count(),
             Participant.count({ where: { status: 'SUDAH' } }),
-            Assessor.count(),
-            Assessment.findOne({
-                attributes: [[Sequelize.fn('AVG', Sequelize.col('nilai')), 'average']],
-                raw: true
-            })
+            Assessor.count()
         ]);
+
+        // Calculate average score using the new scoring system
+        let avgScore = 0;
+        try {
+            const { calculateParticipantScores, formatScoresForAPI } = require('../utils/scoring.utils');
+            
+            const participantsWithAssessments = await Participant.findAll({
+                include: [{
+                    model: Assessment,
+                    as: 'assessments',
+                    required: true // Only participants with assessments
+                }],
+                raw: false
+            });
+
+            let totalScore = 0;
+            let count = 0;
+            
+            participantsWithAssessments.forEach(participant => {
+                const assessments = participant.assessments || [];
+                if (assessments.length > 0) {
+                    const scoreData = calculateParticipantScores(assessments);
+                    const formattedScores = formatScoresForAPI(scoreData);
+                    totalScore += formattedScores.scores.overall;
+                    count++;
+                }
+            });
+
+            avgScore = count > 0 ? (totalScore / count) : 0;
+        } catch (error) {
+            console.error('Error calculating average score:', error);
+            avgScore = 0;
+        }
 
         return {
             totalParticipants,
             completedAssessments,
             totalAssessors,
-            avgScore: avgScore?.average || 0
+            avgScore: parseFloat(avgScore.toFixed(2))
         };
     }
 
@@ -144,56 +172,80 @@ class DashboardRepository {
         }));
     }
 
-    // Get average scores by education level
+    // Get average scores by education level  
     async getAverageScoresByEducationLevel() {
         try {
-            // Get overall average first
-            const overallAvg = await Assessment.findOne({
-                attributes: [[Sequelize.fn('AVG', Sequelize.col('nilai')), 'average']],
-                raw: true
+            // Import scoring utilities
+            const { calculateParticipantScores, formatScoresForAPI } = require('../utils/scoring.utils');
+            
+            // Get participants with their assessments grouped by education level
+            const participantsByLevel = await Participant.findAll({
+                include: [{
+                    model: Assessment,
+                    as: 'assessments',
+                    required: false
+                }],
+                where: { jenjang: { [Op.not]: null } },
+                raw: false
             });
 
-            // Get averages by education level
-            const result = await sequelize.query(`
-                SELECT 
-                    p.jenjang,
-                    AVG(a.nilai) as avgScore
-                FROM assessments a
-                INNER JOIN participants p ON a.peserta_id = p.id
-                WHERE p.jenjang IS NOT NULL
-                GROUP BY p.jenjang
-            `, {
-                type: Sequelize.QueryTypes.SELECT
+            // Calculate overall average from all participants
+            let totalOverallScore = 0;
+            let totalParticipants = 0;
+
+            const levelScores = {};
+            
+            participantsByLevel.forEach(participant => {
+                const assessments = participant.assessments || [];
+                
+                if (assessments.length > 0) {
+                    const scoreData = calculateParticipantScores(assessments);
+                    const formattedScores = formatScoresForAPI(scoreData);
+                    const overallScore = formattedScores.scores.overall;
+                    
+                    totalOverallScore += overallScore;
+                    totalParticipants++;
+                    
+                    // Group by education level
+                    const jenjang = participant.jenjang;
+                    if (!levelScores[jenjang]) {
+                        levelScores[jenjang] = { total: 0, count: 0 };
+                    }
+                    levelScores[jenjang].total += overallScore;
+                    levelScores[jenjang].count++;
+                }
             });
 
             const levelMap = {
                 'PAUD': 'Rata² PAUD/TK',
-                'TK': 'Rata² PAUD/TK',
+                'TK': 'Rata² PAUD/TK', 
                 'SD': 'Rata² SD',
                 'SMP': 'Rata² SMP',
                 'SMA': 'Rata² SMA/Umum',
                 'SMK': 'Rata² SMA/Umum'
             };
 
+            // Aggregate by mapped levels
             const aggregated = {};
-            result.forEach(item => {
-                const mappedLevel = levelMap[item.jenjang] || `Rata² ${item.jenjang}`;
+            Object.entries(levelScores).forEach(([jenjang, data]) => {
+                const mappedLevel = levelMap[jenjang] || `Rata² ${jenjang}`;
                 if (!aggregated[mappedLevel]) {
                     aggregated[mappedLevel] = { total: 0, count: 0 };
                 }
-                aggregated[mappedLevel].total += parseFloat(item.avgScore);
-                aggregated[mappedLevel].count += 1;
+                aggregated[mappedLevel].total += data.total;
+                aggregated[mappedLevel].count += data.count;
             });
 
             const results = Object.entries(aggregated).map(([label, data]) => ({
                 label,
-                value: (data.total / data.count).toFixed(2)
+                value: data.count > 0 ? (data.total / data.count).toFixed(2) : '0.00'
             }));
 
             // Add overall average at the beginning
+            const overallAverage = totalParticipants > 0 ? (totalOverallScore / totalParticipants).toFixed(2) : '0.00';
             results.unshift({
                 label: 'Rata² Nilai Peserta',
-                value: parseFloat(overallAvg?.average || 0).toFixed(2)
+                value: overallAverage
             });
 
             return results;
@@ -214,27 +266,51 @@ class DashboardRepository {
     // Get province achievement data
     async getProvinceAchievementData() {
         try {
-            const result = await sequelize.query(`
-                SELECT 
-                    p.provinsi,
-                    MIN(a.nilai) as terendah,
-                    MAX(a.nilai) as tertinggi,
-                    AVG(a.nilai) as rata
-                FROM assessments a
-                INNER JOIN participants p ON a.peserta_id = p.id
-                WHERE p.provinsi IS NOT NULL
-                GROUP BY p.provinsi
-                ORDER BY p.provinsi
-            `, {
-                type: Sequelize.QueryTypes.SELECT
+            const { calculateParticipantScores, formatScoresForAPI } = require('../utils/scoring.utils');
+            
+            const participantsByProvince = await Participant.findAll({
+                include: [{
+                    model: Assessment,
+                    as: 'assessments',
+                    required: true
+                }],
+                where: { provinsi: { [Op.not]: null } },
+                raw: false
             });
 
-            return result.map(item => ({
-                name: item.provinsi,
-                terendah: parseFloat(item.terendah),
-                tertinggi: parseFloat(item.tertinggi),
-                rata: parseFloat(item.rata)
-            }));
+            const provinceStats = {};
+
+            participantsByProvince.forEach(participant => {
+                const assessments = participant.assessments || [];
+                if (assessments.length > 0) {
+                    const scoreData = calculateParticipantScores(assessments);
+                    const formattedScores = formatScoresForAPI(scoreData);
+                    const overallScore = formattedScores.scores.overall;
+                    
+                    const province = participant.provinsi;
+                    if (!provinceStats[province]) {
+                        provinceStats[province] = {
+                            scores: [],
+                            name: province
+                        };
+                    }
+                    provinceStats[province].scores.push(overallScore);
+                }
+            });
+
+            const result = Object.values(provinceStats).map(provinceData => {
+                const scores = provinceData.scores;
+                const sortedScores = scores.sort((a, b) => a - b);
+                
+                return {
+                    name: provinceData.name,
+                    terendah: parseFloat(sortedScores[0]?.toFixed(2) || 0),
+                    tertinggi: parseFloat(sortedScores[sortedScores.length - 1]?.toFixed(2) || 0),
+                    rata: parseFloat((scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(2))
+                };
+            }).sort((a, b) => a.name.localeCompare(b.name));
+
+            return result;
         } catch (error) {
             console.error('Error in getProvinceAchievementData:', error);
             // Fallback to mock data
@@ -250,41 +326,47 @@ class DashboardRepository {
 
     // Get fluency level distribution by province
     async getFluencyLevelByProvince() {
-        // Use raw SQL to avoid Sequelize alias issues
         try {
-            const result = await sequelize.query(`
-                SELECT 
-                    p.provinsi,
-                    CASE 
-                        WHEN a.nilai >= 90 THEN 'mahir' 
-                        WHEN a.nilai >= 75 THEN 'lancar' 
-                        ELSE 'kurang_lancar' 
-                    END as tingkat,
-                    COUNT(a.id) as jumlah
-                FROM assessments a
-                INNER JOIN participants p ON a.peserta_id = p.id
-                WHERE p.provinsi IS NOT NULL
-                GROUP BY p.provinsi, CASE 
-                    WHEN a.nilai >= 90 THEN 'mahir' 
-                    WHEN a.nilai >= 75 THEN 'lancar' 
-                    ELSE 'kurang_lancar' 
-                END
-            `, {
-                type: Sequelize.QueryTypes.SELECT
+            const { calculateParticipantScores, formatScoresForAPI } = require('../utils/scoring.utils');
+            
+            const participantsByProvince = await Participant.findAll({
+                include: [{
+                    model: Assessment,
+                    as: 'assessments',
+                    required: true
+                }],
+                where: { provinsi: { [Op.not]: null } },
+                raw: false
             });
 
-            // Group by province
             const provinceData = {};
-            result.forEach(item => {
-                if (!provinceData[item.provinsi]) {
-                    provinceData[item.provinsi] = {
-                        name: item.provinsi,
-                        lancar: 0,
-                        mahir: 0,
-                        kurang_lancar: 0
-                    };
+
+            participantsByProvince.forEach(participant => {
+                const assessments = participant.assessments || [];
+                if (assessments.length > 0) {
+                    const scoreData = calculateParticipantScores(assessments);
+                    const formattedScores = formatScoresForAPI(scoreData);
+                    const overallScore = formattedScores.scores.overall;
+                    
+                    const province = participant.provinsi;
+                    if (!provinceData[province]) {
+                        provinceData[province] = {
+                            name: province,
+                            lancar: 0,
+                            mahir: 0,
+                            kurang_lancar: 0
+                        };
+                    }
+                    
+                    // Categorize based on overall score
+                    if (overallScore >= 90) {
+                        provinceData[province].mahir++;
+                    } else if (overallScore >= 75) {
+                        provinceData[province].lancar++;
+                    } else {
+                        provinceData[province].kurang_lancar++;
+                    }
                 }
-                provinceData[item.provinsi][item.tingkat] = parseInt(item.jumlah);
             });
 
             // Convert to percentage
@@ -313,60 +395,89 @@ class DashboardRepository {
 
     // Get error statistics by category
     async getErrorStatisticsByCategory(category) {
-        // This would need specific error tracking in assessments
-        // For now, return mock structure that matches the frontend
-        const mockData = {
-            'makharij': [
-                { name: 'ع', total: 18500 },
-                { name: 'غ', total: 20500 },
-                { name: 'خ', total: 25500 },
-                { name: 'د', total: 30000 },
-                { name: 'ط', total: 30500 },
-                { name: 'ق', total: 39500 },
-                { name: 'ك', total: 47000 },
-                { name: 'ف', total: 36500 },
-                { name: 'م', total: 20000 },
-                { name: 'ل', total: 26000 }
-            ],
-            'sifat': [
-                { name: 'ع', total: 35000 },
-                { name: 'غ', total: 41000 },
-                { name: 'خ', total: 18000 },
-                { name: 'د', total: 29500 },
-                { name: 'ط', total: 20000 },
-                { name: 'ق', total: 45000 },
-                { name: 'ك', total: 33000 },
-                { name: 'ف', total: 15500 },
-                { name: 'م', total: 27500 },
-                { name: 'ل', total: 39000 }
-            ],
-            'ahkam': [
-                { name: 'Ghünnah Musyaddadah', total: 52000 },
-                { name: 'Idzghâm Bilaghünnah', total: 58000 },
-                { name: 'Idzghâm Mutamassilain', total: 8000 },
-                { name: 'Idzghâm Mutaqâribain', total: 10500 },
-                { name: 'Ikhfâ', total: 68000 },
-                { name: 'Iqlâb', total: 6500 },
-                { name: 'Idzhâr Syafawi', total: 27000 },
-                { name: 'Idzghâm Mimi', total: 12000 },
-                { name: 'Ikhfâ Syafawi', total: 17000 },
-                { name: 'Tanâfus', total: 32000 }
-            ],
-            'mad': [
-                { name: 'Mad Aridlissukun', total: 10000 },
-                { name: 'Mad Iwadh', total: 21000 },
-                { name: 'Mad Jaiz Muntashil', total: 28000 },
-                { name: 'Mad Lazim Harfi Musaqqal', total: 65000 },
-                { name: 'Mad Lazim Kilmi Mukhaffaf', total: 19000 },
-                { name: 'Mad Shilah Qashira', total: 10000 },
-                { name: 'Mad Thabi\'i', total: 60000 },
-                { name: 'Mad Wajib Muttashil', total: 35000 },
-                { name: 'Qashr', total: 40000 },
-                { name: 'Ziyadatul Mad', total: 55000 }
-            ]
-        };
+        try {
+            const { normalizeCategoryName } = require('../utils/scoring.utils');
+            
+            // Map frontend category names to our scoring categories
+            const categoryMapping = {
+                'makharij': ['MAKHRAJ', 'makhraj', 'makharijul_huruf'],
+                'sifat': ['SIFAT', 'sifat', 'sifatul_huruf'], 
+                'ahkam': ['AHKAM', 'ahkam', 'ahkamul_huruf'],
+                'mad': ['MAD', 'mad', 'ahkamul_mad']
+            };
 
-        return mockData[category] || [];
+            const targetCategories = categoryMapping[category] || [category];
+            
+            // Get assessments by category and count errors
+            const assessments = await Assessment.findAll({
+                where: {
+                    kategori: {
+                        [Op.or]: targetCategories.map(cat => ({
+                            [Op.iLike]: `%${cat}%`
+                        }))
+                    },
+                    nilai: { [Op.lt]: 100 } // Count as error if score is less than perfect
+                },
+                attributes: ['huruf', 'kategori', [Sequelize.fn('COUNT', Sequelize.col('id')), 'total']],
+                group: ['huruf', 'kategori'],
+                raw: true
+            });
+
+            if (assessments.length === 0) {
+                // Fallback to mock data if no real data available
+                const mockData = {
+                    'makharij': [
+                        { name: 'ع', total: 18500 },
+                        { name: 'غ', total: 20500 },
+                        { name: 'خ', total: 25500 },
+                        { name: 'د', total: 30000 },
+                        { name: 'ط', total: 30500 }
+                    ],
+                    'sifat': [
+                        { name: 'ع', total: 35000 },
+                        { name: 'غ', total: 41000 },
+                        { name: 'خ', total: 18000 },
+                        { name: 'د', total: 29500 },
+                        { name: 'ط', total: 20000 }
+                    ],
+                    'ahkam': [
+                        { name: 'Ghünnah Musyaddadah', total: 52000 },
+                        { name: 'Idzghâm Bilaghünnah', total: 58000 },
+                        { name: 'Ikhfâ', total: 68000 },
+                        { name: 'Iqlâb', total: 6500 },
+                        { name: 'Idzhâr Syafawi', total: 27000 }
+                    ],
+                    'mad': [
+                        { name: 'Mad Aridlissukun', total: 10000 },
+                        { name: 'Mad Iwadh', total: 21000 },
+                        { name: 'Mad Wajib Muttashil', total: 35000 },
+                        { name: 'Mad Thabi\'i', total: 60000 },
+                        { name: 'Qashr', total: 40000 }
+                    ]
+                };
+                return mockData[category] || [];
+            }
+
+            // Aggregate by huruf (letter/aspect)
+            const errorStats = {};
+            assessments.forEach(assessment => {
+                const huruf = assessment.huruf;
+                if (!errorStats[huruf]) {
+                    errorStats[huruf] = 0;
+                }
+                errorStats[huruf] += parseInt(assessment.total);
+            });
+
+            // Convert to array and sort by total errors descending
+            return Object.entries(errorStats)
+                .map(([name, total]) => ({ name, total }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 10); // Top 10 errors
+
+        } catch (error) {
+            console.error(`Error in getErrorStatisticsByCategory for ${category}:`, error);
+            return [];
+        }
     }
 
     // Get penalty statistics

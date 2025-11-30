@@ -340,6 +340,24 @@ class AdminUseCase {
       throw new Error(`Failed to reset password: ${error.message}`);
     }
   }
+
+  async getAdminByUserId(userId) {
+    try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+
+      const admin = await this.adminRepository.findByUserId(userId);
+      
+      if (!admin) {
+        throw new Error('Admin not found');
+      }
+
+      return admin;
+    } catch (error) {
+      throw new Error(`Failed to get admin by user ID: ${error.message}`);
+    }
+  }
 }
 
 module.exports = AdminUseCase;

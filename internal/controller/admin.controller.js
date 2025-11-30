@@ -350,6 +350,65 @@ class AdminController {
       });
     }
   }
+
+  /**
+   * @swagger
+   * /api/admins/profile:
+   *   get:
+   *     summary: Get admin profile by token
+   *     description: Get current admin's profile information using the JWT token
+   *     tags: [Admin]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Admin profile retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                   example: true
+   *                 message:
+   *                   type: string
+   *                   example: "Admin profile retrieved successfully"
+   *                 data:
+   *                   $ref: '#/components/schemas/Admin'
+   *       404:
+   *         description: Admin not found
+   *       401:
+   *         description: Unauthorized access
+   *       500:
+   *         description: Server error
+   */
+  async getAdminProfile(req, res) {
+    try {
+      const userId = req.user.id; // From auth middleware
+      
+      const admin = await this.adminUseCase.getAdminByUserId(userId);
+      
+      if (!admin) {
+        return res.status(404).json({
+          success: false,
+          message: 'Admin profile not found'
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Admin profile retrieved successfully',
+        data: admin
+      });
+    } catch (error) {
+      console.error('Error in getAdminProfile:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to retrieve admin profile'
+      });
+    }
+  }
 }
 
 module.exports = AdminController;

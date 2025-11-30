@@ -71,6 +71,12 @@ function setupAssociations() {
         foreignKey: 'asesor_id',
         as: 'assessor'
     });
+
+    // Participant has many assessments
+    Participant.hasMany(Assessment, {
+        foreignKey: 'peserta_id',
+        as: 'assessments'
+    });
 }
 
 // Setup associations
