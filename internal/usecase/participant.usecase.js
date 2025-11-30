@@ -6,7 +6,8 @@ const { sequelize } = require('../../config/database');
 class ParticipantUsecase {
   async getAllParticipants(options) {
     try {
-      return await participantRepository.findAll(options);
+      // Use the enhanced method that includes scoring
+      return await participantRepository.findAllWithScores(options);
     } catch (error) {
       throw new Error(`Failed to get participants: ${error.message}`);
     }
@@ -14,7 +15,8 @@ class ParticipantUsecase {
 
   async getParticipantById(id) {
     try {
-      const participant = await participantRepository.findById(id);
+      // Use the enhanced method that includes scoring
+      const participant = await participantRepository.findByIdWithScores(id);
       if (!participant) {
         throw new Error('Participant not found');
       }

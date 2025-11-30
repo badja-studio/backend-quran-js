@@ -1,5 +1,6 @@
-const { Assessor, User, Participant } = require('../models');
+const { Assessor, User, Participant, Assessment } = require('../models');
 const { Op } = require('sequelize');
+const { sequelize } = require('../../config/database');
 
 class AssessorRepository {
   async findAll(options = {}) {
@@ -390,6 +391,168 @@ class AssessorRepository {
       assessor,
       statistics
     };
+  }
+
+  /**
+   * Get real-time assessment counts for an assessor
+   * @param {string} assessorId - Assessor ID
+   * @returns {Object} - Real-time counts
+   */
+  async getRealTimeAssessmentCounts(assessorId) {
+    try {
+      // Get participants assigned to this assessor
+      const participants = await Participant.findAll({
+        where: { asesor_id: assessorId },
+        attributes: ['id', 'status'],
+        raw: true
+      });
+
+      if (participants.length === 0) {
+        return {
+          total_assigned: 0,
+          assessed: 0,
+          not_assessed: 0,
+          assessment_progress: 0
+        };
+      }
+
+      const participantIds = participants.map(p => p.id);
+
+      // Get participants who have been assessed (have assessment records)
+      const assessedParticipants = await Assessment.findAll({
+        where: { 
+          peserta_id: { [Op.in]: participantIds },
+          asesor_id: assessorId
+        },
+        attributes: ['peserta_id'],
+        group: ['peserta_id'],
+        raw: true
+      });
+
+      const assessedCount = assessedParticipants.length;
+      const totalAssigned = participants.length;
+      const notAssessedCount = totalAssigned - assessedCount;
+      const progressPercentage = totalAssigned > 0 ? Math.round((assessedCount / totalAssigned) * 100) : 0;
+
+      return {
+        total_assigned: totalAssigned,
+        assessed: assessedCount,
+        not_assessed: notAssessedCount,
+        assessment_progress: progressPercentage,
+        updated_at: new Date()
+      };
+    } catch (error) {
+      console.error('Error getting real-time assessment counts:', error);
+      throw new Error(`Failed to get assessment counts: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get real-time counts for all assessors
+   * @returns {Object} - Counts by assessor ID
+   */
+  async getAllAssessorsRealTimeCounts() {
+    try {
+      // Get all assessors with their assigned participants
+      const assessorsWithParticipants = await Assessor.findAll({
+        include: [{
+          model: Participant,
+          as: 'participants',
+          attributes: ['id', 'status'],
+          required: false
+        }],
+        attributes: ['id', 'name', 'username']
+      });
+
+      const countsPromises = assessorsWithParticipants.map(async (assessor) => {
+        const counts = await this.getRealTimeAssessmentCounts(assessor.id);
+        return {
+          assessor_id: assessor.id,
+          assessor_name: assessor.name,
+          assessor_username: assessor.username,
+          ...counts
+        };
+      });
+
+      const allCounts = await Promise.all(countsPromises);
+
+      // Convert to object with assessor ID as key
+      const countsByAssessor = {};
+      allCounts.forEach(count => {
+        countsByAssessor[count.assessor_id] = count;
+      });
+
+      return countsByAssessor;
+    } catch (error) {
+      console.error('Error getting all assessors real-time counts:', error);
+      throw new Error(`Failed to get all assessor counts: ${error.message}`);
+    }
+  }
+
+  /**
+   * Enhanced findAll that includes real-time assessment counts
+   * @param {Object} options - Query options
+   * @returns {Object} - Assessors with real-time counts
+   */
+  async findAllWithCounts(options = {}) {
+    try {
+      // Get assessors using existing findAll method
+      const result = await this.findAll(options);
+      
+      if (!result.data || result.data.length === 0) {
+        return result;
+      }
+
+      // Get assessor IDs
+      const assessorIds = result.data.map(assessor => assessor.id);
+
+      // Get real-time counts for all these assessors
+      const countsPromises = assessorIds.map(id => this.getRealTimeAssessmentCounts(id));
+      const allCounts = await Promise.all(countsPromises);
+
+      // Map counts to assessors
+      const countsByAssessor = {};
+      assessorIds.forEach((id, index) => {
+        countsByAssessor[id] = allCounts[index];
+      });
+
+      // Add counts to assessor data
+      result.data = result.data.map(assessor => ({
+        ...assessor.toJSON(),
+        realTimeCounts: countsByAssessor[assessor.id] || null
+      }));
+
+      return result;
+    } catch (error) {
+      console.error('Error in findAllWithCounts:', error);
+      throw new Error(`Failed to get assessors with counts: ${error.message}`);
+    }
+  }
+
+  /**
+   * Enhanced findById that includes real-time assessment counts
+   * @param {string} id - Assessor ID
+   * @returns {Object} - Assessor with real-time counts
+   */
+  async findByIdWithCounts(id) {
+    try {
+      const assessor = await this.findById(id);
+      
+      if (!assessor) {
+        return null;
+      }
+
+      // Get real-time counts for this assessor
+      const counts = await this.getRealTimeAssessmentCounts(id);
+
+      return {
+        ...assessor.toJSON(),
+        realTimeCounts: counts
+      };
+    } catch (error) {
+      console.error('Error in findByIdWithCounts:', error);
+      throw new Error(`Failed to get assessor with counts: ${error.message}`);
+    }
   }
 }
 

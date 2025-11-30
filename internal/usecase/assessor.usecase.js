@@ -6,7 +6,8 @@ const { sequelize } = require('../../config/database');
 class AssessorUsecase {
   async getAllAssessors(options) {
     try {
-      return await assessorRepository.findAll(options);
+      // Use the enhanced method that includes real-time counts
+      return await assessorRepository.findAllWithCounts(options);
     } catch (error) {
       throw new Error(`Failed to get assessors: ${error.message}`);
     }
@@ -14,7 +15,8 @@ class AssessorUsecase {
 
   async getAssessorById(id) {
     try {
-      const assessor = await assessorRepository.findById(id);
+      // Use the enhanced method that includes real-time counts
+      const assessor = await assessorRepository.findByIdWithCounts(id);
       if (!assessor) {
         throw new Error('Assessor not found');
       }

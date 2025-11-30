@@ -73,12 +73,14 @@ class ExportUseCase {
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Data Peserta');
 
-            // Set header
+            // Set header with scoring columns
             const headers = [
                 'No Akun', 'NIP', 'Nama', 'Jenis Kelamin', 'Tempat Lahir',
                 'Jabatan', 'Jenjang', 'Level', 'Provinsi', 'Kab/Kota',
                 'Sekolah', 'Pendidikan', 'Program Studi', 'Perguruan Tinggi',
-                'Jenis PT', 'Tahun Lulus', 'Status', 'Usia', 'Pegawai'
+                'Jenis PT', 'Tahun Lulus', 'Status', 'Usia', 'Pegawai',
+                // Scoring columns
+                'Nilai Makhraj', 'Nilai Sifat', 'Nilai Ahkam', 'Nilai Mad', 'Nilai Gharib', 'Nilai Keseluruhan'
             ];
 
             worksheet.addRow(headers);
@@ -100,14 +102,17 @@ class ExportUseCase {
                 };
             });
 
-            // Get data
-            const participants = await participantRepository.findAll({
+            // Get data with scores
+            const participants = await participantRepository.findAllWithScores({
                 limit: 999999, // Get all data
                 ...filters
             });
 
             // Add data rows
             participants.data.forEach((participant, index) => {
+                const scoring = participant.scoring || {};
+                const scores = scoring.scores || {};
+                
                 const row = [
                     participant.no_akun || '',
                     participant.nip || '',
@@ -127,7 +132,14 @@ class ExportUseCase {
                     participant.tahun_lulus || '',
                     participant.status || '',
                     participant.usia || '',
-                    participant.pegawai || ''
+                    participant.pegawai || '',
+                    // Scoring data
+                    scores.makhraj || 100,
+                    scores.sifat || 100,
+                    scores.ahkam || 100,
+                    scores.mad || 100,
+                    scores.gharib || 100,
+                    scores.overall || 100
                 ];
                 worksheet.addRow(row);
             });
@@ -151,7 +163,7 @@ class ExportUseCase {
 
             const headers = [
                 'Nama', 'Username', 'No Telepon', 'Email', 'Link Grup WA',
-                'Total Peserta Belum Asesmen', 'Total Peserta Selesai Asesmen'
+                'Total Peserta Ditugaskan', 'Peserta Sudah Dinilai', 'Peserta Belum Dinilai', 'Progress (%)'
             ];
 
             worksheet.addRow(headers);
@@ -173,20 +185,24 @@ class ExportUseCase {
                 };
             });
 
-            const assessors = await assessorRepository.findAll({
+            const assessors = await assessorRepository.findAllWithCounts({
                 limit: 999999,
                 ...filters
             });
 
             assessors.data.forEach((assessor) => {
+                const counts = assessor.realTimeCounts || {};
+                
                 const row = [
                     assessor.name || '',
                     assessor.username || '',
                     assessor.no_telepon || '',
                     assessor.email || '',
                     assessor.link_grup_wa || '',
-                    assessor.total_peserta_belum_asesmen || 0,
-                    assessor.total_peserta_selesai_asesmen || 0
+                    counts.total_assigned || 0,
+                    counts.assessed || 0,
+                    counts.not_assessed || 0,
+                    counts.assessment_progress || 0
                 ];
                 worksheet.addRow(row);
             });
@@ -255,7 +271,7 @@ class ExportUseCase {
     // Generate PDF for participants
     async generateParticipantsPDF(filters = {}) {
         try {
-            const participants = await participantRepository.findAll({
+            const participants = await participantRepository.findAllWithScores({
                 limit: 999999,
                 ...filters
             });
@@ -296,10 +312,19 @@ class ExportUseCase {
                                 <th>Provinsi</th>
                                 <th>Sekolah</th>
                                 <th>Status</th>
+                                <th>Makhraj</th>
+                                <th>Sifat</th>
+                                <th>Ahkam</th>
+                                <th>Mad</th>
+                                <th>Gharib</th>
+                                <th>Nilai Akhir</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${participants.data.map((participant, index) => `
+                            ${participants.data.map((participant, index) => {
+                                const scoring = participant.scoring || {};
+                                const scores = scoring.scores || {};
+                                return `
                                 <tr>
                                     <td>${index + 1}</td>
                                     <td>${participant.no_akun || '-'}</td>
@@ -311,8 +336,15 @@ class ExportUseCase {
                                     <td>${participant.provinsi || '-'}</td>
                                     <td>${participant.sekolah || '-'}</td>
                                     <td>${participant.status || '-'}</td>
+                                    <td>${scores.makhraj || 100}</td>
+                                    <td>${scores.sifat || 100}</td>
+                                    <td>${scores.ahkam || 100}</td>
+                                    <td>${scores.mad || 100}</td>
+                                    <td>${scores.gharib || 100}</td>
+                                    <td>${scores.overall || 100}</td>
                                 </tr>
-                            `).join('')}
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </body>
@@ -328,7 +360,7 @@ class ExportUseCase {
     // Generate PDF for assessors
     async generateAssessorsPDF(filters = {}) {
         try {
-            const assessors = await assessorRepository.findAll({
+            const assessors = await assessorRepository.findAllWithCounts({
                 limit: 999999,
                 ...filters
             });
@@ -364,22 +396,29 @@ class ExportUseCase {
                                 <th>Username</th>
                                 <th>Email</th>
                                 <th>No Telepon</th>
-                                <th>Belum Asesmen</th>
-                                <th>Selesai Asesmen</th>
+                                <th>Total Ditugaskan</th>
+                                <th>Sudah Dinilai</th>
+                                <th>Belum Dinilai</th>
+                                <th>Progress (%)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${assessors.data.map((assessor, index) => `
+                            ${assessors.data.map((assessor, index) => {
+                                const counts = assessor.realTimeCounts || {};
+                                return `
                                 <tr>
                                     <td>${index + 1}</td>
                                     <td>${assessor.name || '-'}</td>
                                     <td>${assessor.username || '-'}</td>
                                     <td>${assessor.email || '-'}</td>
                                     <td>${assessor.no_telepon || '-'}</td>
-                                    <td>${assessor.total_peserta_belum_asesmen || 0}</td>
-                                    <td>${assessor.total_peserta_selesai_asesmen || 0}</td>
+                                    <td>${counts.total_assigned || 0}</td>
+                                    <td>${counts.assessed || 0}</td>
+                                    <td>${counts.not_assessed || 0}</td>
+                                    <td>${counts.assessment_progress || 0}%</td>
                                 </tr>
-                            `).join('')}
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </body>

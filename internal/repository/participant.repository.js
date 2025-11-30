@@ -1,5 +1,6 @@
 const { Participant, Assessor, Assessment, User } = require('../models');
 const { Op } = require('sequelize');
+const { calculateParticipantScores, formatScoresForAPI } = require('../utils/scoring.utils');
 
 class ParticipantRepository {
   async findAll(options = {}) {
@@ -547,6 +548,137 @@ class ParticipantRepository {
     });
 
     return statusCounts;
+  }
+
+  /**
+   * Get participant assessments and calculate scores
+   * @param {string} participantId - Participant ID
+   * @returns {Object} - Calculated scores with category breakdown
+   */
+  async getParticipantScores(participantId) {
+    try {
+      const assessments = await Assessment.findAll({
+        where: { peserta_id: participantId },
+        raw: true
+      });
+
+      if (!assessments || assessments.length === 0) {
+        // Return default scores if no assessments found
+        return formatScoresForAPI({
+          categoryScores: {},
+          overallAverage: 100,
+          totalDeduction: 0,
+          assessmentCount: 0,
+          calculatedAt: new Date().toISOString()
+        });
+      }
+
+      const scoreData = calculateParticipantScores(assessments);
+      return formatScoresForAPI(scoreData);
+    } catch (error) {
+      console.error('Error calculating participant scores:', error);
+      throw new Error(`Failed to calculate scores: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get scores for multiple participants
+   * @param {Array} participantIds - Array of participant IDs
+   * @returns {Object} - Object with participant IDs as keys and scores as values
+   */
+  async getMultipleParticipantScores(participantIds) {
+    try {
+      const assessments = await Assessment.findAll({
+        where: { peserta_id: { [Op.in]: participantIds } },
+        raw: true
+      });
+
+      const scoresByParticipant = {};
+
+      // Group assessments by participant
+      const assessmentsByParticipant = assessments.reduce((acc, assessment) => {
+        if (!acc[assessment.peserta_id]) {
+          acc[assessment.peserta_id] = [];
+        }
+        acc[assessment.peserta_id].push(assessment);
+        return acc;
+      }, {});
+
+      // Calculate scores for each participant
+      participantIds.forEach(participantId => {
+        const participantAssessments = assessmentsByParticipant[participantId] || [];
+        
+        if (participantAssessments.length === 0) {
+          // Default scores if no assessments
+          scoresByParticipant[participantId] = formatScoresForAPI({
+            categoryScores: {},
+            overallAverage: 100,
+            totalDeduction: 0,
+            assessmentCount: 0,
+            calculatedAt: new Date().toISOString()
+          });
+        } else {
+          const scoreData = calculateParticipantScores(participantAssessments);
+          scoresByParticipant[participantId] = formatScoresForAPI(scoreData);
+        }
+      });
+
+      return scoresByParticipant;
+    } catch (error) {
+      console.error('Error calculating multiple participant scores:', error);
+      throw new Error(`Failed to calculate multiple scores: ${error.message}`);
+    }
+  }
+
+  /**
+   * Enhanced findAll that includes calculated scores
+   * @param {Object} options - Query options
+   * @param {boolean} includeScores - Whether to include calculated scores
+   * @returns {Object} - Participants with scores if requested
+   */
+  async findAllWithScores(options = {}) {
+    // Get participants using existing findAll method
+    const result = await this.findAll(options);
+    
+    if (!result.data || result.data.length === 0) {
+      return result;
+    }
+
+    // Get participant IDs
+    const participantIds = result.data.map(participant => participant.id);
+
+    // Calculate scores for all participants
+    const scoresByParticipant = await this.getMultipleParticipantScores(participantIds);
+
+    // Add scores to participant data
+    result.data = result.data.map(participant => ({
+      ...participant.toJSON(),
+      scoring: scoresByParticipant[participant.id] || null
+    }));
+
+    return result;
+  }
+
+  /**
+   * Enhanced findById that includes calculated scores
+   * @param {string} id - Participant ID
+   * @param {boolean} includeScores - Whether to include calculated scores
+   * @returns {Object} - Participant with scores if requested
+   */
+  async findByIdWithScores(id) {
+    const participant = await this.findById(id);
+    
+    if (!participant) {
+      return null;
+    }
+
+    // Calculate scores for this participant
+    const scores = await this.getParticipantScores(id);
+
+    return {
+      ...participant.toJSON(),
+      scoring: scores
+    };
   }
 }
 
