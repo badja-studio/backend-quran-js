@@ -53,12 +53,6 @@ module.exports = {
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     });
-
-    // Create unique index
-    await queryInterface.addIndex('assessments', ['peserta_id', 'asesor_id', 'huruf'], {
-      unique: true,
-      name: 'assessments_peserta_asesor_huruf_unique'
-    });
   },
 
   async down (queryInterface, Sequelize) {
