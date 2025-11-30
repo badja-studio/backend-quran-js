@@ -172,7 +172,7 @@ module.exports = {
         onDelete: 'SET NULL'
       },
       status: {
-        type: Sequelize.ENUM('BELUM', 'PROSES', 'SELESAI'),
+        type: Sequelize.ENUM('BELUM','SUDAH'),
         allowNull: false,
         defaultValue: 'BELUM'
       },

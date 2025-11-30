@@ -190,7 +190,7 @@ const Participant = sequelize.define('Participant', {
         comment: 'ID Asesor yang ditugaskan'
     },
     status: {
-        type: DataTypes.ENUM('BELUM', 'PROSES', 'SELESAI'),
+        type: DataTypes.ENUM('BELUM', 'SUDAH'),
         allowNull: false,
         defaultValue: 'BELUM',
         comment: 'Status Asesmen (BELUM/PROSES/SELESAI)'
