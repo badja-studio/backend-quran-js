@@ -57,45 +57,21 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      provinsi_id: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'provinces',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
+      provinsi: {
+        type: Sequelize.STRING,
+        allowNull: true
       },
-      kota_id: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'cities',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
+      kota: {
+        type: Sequelize.STRING,
+        allowNull: true
       },
-      kecamatan_id: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'districts',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
+      kecamatan: {
+        type: Sequelize.STRING,
+        allowNull: true
       },
-      kelurahan_id: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'villages',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
+      kelurahan: {
+        type: Sequelize.STRING,
+        allowNull: true
       },
       kode_pos: {
         type: Sequelize.STRING(10),
@@ -125,14 +101,6 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true
       },
-      provinsi: {
-        type: Sequelize.STRING,
-        allowNull: true
-      },
-      kab_kota: {
-        type: Sequelize.STRING,
-        allowNull: true
-      },
       sekolah: {
         type: Sequelize.STRING,
         allowNull: true
@@ -149,11 +117,35 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true
       },
+      asal_kampus: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      fakultas: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
       jenis_pt: {
         type: Sequelize.STRING,
         allowNull: true
       },
       tahun_lulus: {
+        type: Sequelize.INTEGER,
+        allowNull: true
+      },
+      tingkat_sekolah: {
+        type: Sequelize.ENUM('MI', 'MTs', 'MA'),
+        allowNull: true
+      },
+      nama_sekolah: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      alamat_sekolah: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      usia: {
         type: Sequelize.INTEGER,
         allowNull: true
       },
@@ -186,6 +178,29 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
+    });
+
+    // Create indexes
+    await queryInterface.addIndex('participants', ['no_akun'], {
+      unique: true,
+      name: 'participants_no_akun_unique'
+    });
+
+    await queryInterface.addIndex('participants', ['nip'], {
+      unique: true,
+      name: 'participants_nip_unique'
+    });
+
+    await queryInterface.addIndex('participants', ['asesor_id'], {
+      name: 'participants_asesor_id_idx'
+    });
+
+    await queryInterface.addIndex('participants', ['akun_id'], {
+      name: 'participants_akun_id_idx'
+    });
+
+    await queryInterface.addIndex('participants', ['status'], {
+      name: 'participants_status_idx'
     });
   },
 
