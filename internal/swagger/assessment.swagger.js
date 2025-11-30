@@ -27,7 +27,7 @@
  *         nilai:
  *           type: number
  *           minimum: 0
- *           description: Numeric score (dapat berupa desimal, min: 0, boleh 0 tapi tidak boleh minus)
+ *           description: "Numeric score (dapat berupa desimal, min: 0, boleh 0 tapi tidak boleh minus)"
  *         kategori:
  *           type: string
  *           description: Assessment category
@@ -65,7 +65,7 @@
  *           type: number
  *           minimum: 0
  *           example: 85.5
- *           description: Numeric score (dapat berupa desimal, min: 0, boleh 0 tapi tidak boleh minus)
+ *           description: "Numeric score (dapat berupa desimal, min: 0, boleh 0 tapi tidak boleh minus)"
  *         kategori:
  *           type: string
  *           example: "Tajwid"

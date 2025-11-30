@@ -2,8 +2,14 @@
 
 # Wait for database to be ready
 echo "⏳ Waiting for database to be ready..."
-sleep 5
+sleep 10
 
-# Start the application (will auto-create tables via sequelize.sync())
+# Run migrations in production
+echo "📦 Running migrations..."
+npm run db:migrate || {
+    echo "⚠️ Migration failed, but continuing..."
+}
+
+# Start the application 
 echo "🚀 Starting application..."
 exec npm start

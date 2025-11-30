@@ -4,6 +4,24 @@ const participantRepository = require('../repository/participant.repository');
 const assessorRepository = require('../repository/assessor.repository');
 const assessmentRepository = require('../repository/assessment.repository');
 
+// Helper function for Puppeteer configuration
+const getPuppeteerConfig = () => ({
+    headless: 'new',
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+    args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor'
+    ]
+});
+
 class ExportUseCase {
     // Generate Excel for participants
     async generateParticipantsExcel(filters = {}) {
@@ -257,10 +275,7 @@ class ExportUseCase {
                 </html>
             `;
 
-            const browser = await puppeteer.launch({
-                headless: 'new',
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
-            });
+            const browser = await puppeteer.launch(getPuppeteerConfig());
             const page = await browser.newPage();
             await page.setContent(html);
             
@@ -338,10 +353,7 @@ class ExportUseCase {
                 </html>
             `;
 
-            const browser = await puppeteer.launch({
-                headless: 'new',
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
-            });
+            const browser = await puppeteer.launch(getPuppeteerConfig());
             const page = await browser.newPage();
             await page.setContent(html);
             
@@ -421,10 +433,7 @@ class ExportUseCase {
                 </html>
             `;
 
-            const browser = await puppeteer.launch({
-                headless: 'new',
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
-            });
+            const browser = await puppeteer.launch(getPuppeteerConfig());
             const page = await browser.newPage();
             await page.setContent(html);
             
