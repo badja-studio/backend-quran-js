@@ -53,7 +53,7 @@ services:
       API_RATE_LIMIT_WINDOW_MS: 900000   # 15 minutes
       API_RATE_LIMIT_MAX_REQUESTS: 1000   # 1000 API requests per 15 minutes per IP
       MASTER_DATA_RATE_LIMIT_WINDOW_MS: 900000  # 15 minutes
-      MASTER_DATA_RATE_LIMIT_MAX_REQUESTS: 1000 # 1000 master data requests per 15 minutes per IP
+      MASTER_DATA_RATE_LIMIT_MAX_REQUESTS: 1500 # 1500 master data requests per 15 minutes per IP
     volumes:
       - .:/app
       - /app/node_modules
