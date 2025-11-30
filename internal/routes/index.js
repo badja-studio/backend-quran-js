@@ -7,6 +7,7 @@ const participantRoutes = require('./participant.routes');
 const assessorRoutes = require('./assessor.routes');
 const assessmentRoutes = require('./assessment.routes');
 const dashboardRoutes = require('./dashboard.routes');
+const exportRoutes = require('./export.routes');
 
 router.use('/auth', authRoutes);
 router.use('/health', healthRoutes);
@@ -14,5 +15,6 @@ router.use('/participants', participantRoutes);
 router.use('/assessors', assessorRoutes);
 router.use('/assessments', assessmentRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/export', exportRoutes);
 
 module.exports = router;
