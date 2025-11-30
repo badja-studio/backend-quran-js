@@ -17,13 +17,13 @@ const District = sequelize.define('District', {
         comment: 'ID Kab/Kota'
     },
     kode: {
-        type: DataTypes.STRING(7),
+        type: DataTypes.STRING(15),
         allowNull: false,
         unique: true,
-        comment: 'Kode Kecamatan (7 digit)'
+        comment: 'Kode Kecamatan'
     },
     nama: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(100),
         allowNull: false,
         comment: 'Nama Kecamatan'
     }

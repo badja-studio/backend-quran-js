@@ -17,20 +17,20 @@ const Village = sequelize.define('Village', {
         comment: 'ID Kecamatan'
     },
     kode: {
-        type: DataTypes.STRING(10),
+        type: DataTypes.STRING(20),
         allowNull: false,
         unique: true,
-        comment: 'Kode Desa/Kelurahan (10 digit)'
+        comment: 'Kode Desa/Kelurahan'
     },
     nama: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(100),
         allowNull: false,
         comment: 'Nama Desa/Kelurahan'
     },
     tipe: {
-        type: DataTypes.ENUM('DESA', 'KELURAHAN'),
+        type: DataTypes.ENUM('KELURAHAN', 'DESA'),
         allowNull: false,
-        comment: 'Tipe (DESA/KELURAHAN)'
+        comment: 'Tipe (KELURAHAN/DESA)'
     }
 }, {
     tableName: 'villages',

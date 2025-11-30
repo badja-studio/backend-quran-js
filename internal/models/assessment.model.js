@@ -48,7 +48,7 @@ const Assessment = sequelize.define('Assessment', {
     indexes: [
         {
             unique: true,
-            fields: ['assesseeId', 'assessorId', 'criterionId']
+            fields: ['peserta_id', 'asesor_id', 'huruf']
         }
     ]
 });

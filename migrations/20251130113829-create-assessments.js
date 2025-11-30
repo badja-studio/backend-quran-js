@@ -10,7 +10,7 @@ module.exports = {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4
       },
-      participant_id: {
+      peserta_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
@@ -20,7 +20,7 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      assessor_id: {
+      asesor_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
@@ -30,42 +30,17 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      tanggal_penilaian: {
-        type: Sequelize.DATEONLY,
+      huruf: {
+        type: Sequelize.STRING,
         allowNull: false
       },
-      waktu_mulai: {
-        type: Sequelize.TIME,
-        allowNull: true
-      },
-      waktu_selesai: {
-        type: Sequelize.TIME,
-        allowNull: true
+      nilai: {
+        type: Sequelize.DECIMAL(5, 2),
+        allowNull: false
       },
       kategori: {
         type: Sequelize.STRING,
         allowNull: false
-      },
-      skor_total: {
-        type: Sequelize.INTEGER,
-        allowNull: true
-      },
-      nilai_akhir: {
-        type: Sequelize.DECIMAL(5, 2),
-        allowNull: true
-      },
-      status: {
-        type: Sequelize.ENUM('DIJADWALKAN', 'SEDANG_BERLANGSUNG', 'SELESAI', 'BATAL'),
-        allowNull: false,
-        defaultValue: 'DIJADWALKAN'
-      },
-      catatan: {
-        type: Sequelize.TEXT,
-        allowNull: true
-      },
-      hasil_penilaian: {
-        type: Sequelize.JSON,
-        allowNull: true
       },
       createdAt: {
         allowNull: false,
@@ -77,6 +52,12 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
+    });
+
+    // Create unique index
+    await queryInterface.addIndex('assessments', ['peserta_id', 'asesor_id', 'huruf'], {
+      unique: true,
+      name: 'assessments_peserta_asesor_huruf_unique'
     });
   },
 

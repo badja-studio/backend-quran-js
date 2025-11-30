@@ -8,13 +8,13 @@ const Province = sequelize.define('Province', {
         autoIncrement: true
     },
     kode: {
-        type: DataTypes.STRING(2),
+        type: DataTypes.STRING(10),
         allowNull: false,
         unique: true,
-        comment: 'Kode Provinsi (2 digit)'
+        comment: 'Kode Provinsi'
     },
     nama: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(100),
         allowNull: false,
         comment: 'Nama Provinsi'
     }

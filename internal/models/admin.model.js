@@ -42,7 +42,7 @@ const Admin = sequelize.define('Admin', {
     },
   },
   user_id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.UUID,
     allowNull: false,
     references: {
       model: 'users',

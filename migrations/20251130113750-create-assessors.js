@@ -10,40 +10,14 @@ module.exports = {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4
       },
-      akun_id: {
-        type: Sequelize.UUID,
-        allowNull: false,
-        references: {
-          model: 'users',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
-      },
       name: {
         type: Sequelize.STRING,
         allowNull: false
       },
-      nip: {
+      username: {
         type: Sequelize.STRING,
         allowNull: false,
         unique: true
-      },
-      jenis_kelamin: {
-        type: Sequelize.ENUM('L', 'P'),
-        allowNull: false
-      },
-      tempat_lahir: {
-        type: Sequelize.STRING,
-        allowNull: true
-      },
-      tanggal_lahir: {
-        type: Sequelize.DATEONLY,
-        allowNull: true
-      },
-      alamat: {
-        type: Sequelize.TEXT,
-        allowNull: true
       },
       no_telepon: {
         type: Sequelize.STRING,
@@ -53,14 +27,29 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true
       },
-      spesialisasi: {
-        type: Sequelize.STRING,
+      link_grup_wa: {
+        type: Sequelize.TEXT,
         allowNull: true
       },
-      status: {
-        type: Sequelize.ENUM('AKTIF', 'TIDAK_AKTIF'),
+      total_peserta_belum_asesmen: {
+        type: Sequelize.INTEGER,
         allowNull: false,
-        defaultValue: 'AKTIF'
+        defaultValue: 0
+      },
+      total_peserta_selesai_asesmen: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      },
+      akun_id: {
+        type: Sequelize.UUID,
+        allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
       },
       createdAt: {
         allowNull: false,
