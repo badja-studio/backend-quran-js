@@ -3,6 +3,7 @@ const User = require('./user.model');
 const Participant = require('./participant.model');
 const Assessor = require('./assessor.model');
 const Assessment = require('./assessment.model');
+const Admin = require('./admin.model');
 
 // Setup associations
 function setupAssociations() {
@@ -15,6 +16,11 @@ function setupAssociations() {
     User.hasOne(Assessor, {
         foreignKey: 'akun_id',
         as: 'assessor'
+    });
+
+    User.hasOne(Admin, {
+        foreignKey: 'user_id',
+        as: 'admin'
     });
 
     // Participant associations
@@ -44,6 +50,12 @@ function setupAssociations() {
         as: 'participants'
     });
 
+    // Admin associations
+    Admin.belongsTo(User, {
+        foreignKey: 'user_id',
+        as: 'user'
+    });
+
     Assessor.hasMany(Assessment, {
         foreignKey: 'asesor_id',
         as: 'assessments'
@@ -69,5 +81,6 @@ module.exports = {
     User,
     Participant,
     Assessor,
-    Assessment
+    Assessment,
+    Admin
 };
