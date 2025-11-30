@@ -17,6 +17,18 @@ dev-up:
 dev-up-d:
     docker-compose -f docker-compose.dev.yml up -d
 
+# Setup development environment with auto-seeding
+dev-setup:
+    @echo "🚀 Setting up development environment..."
+    docker-compose -f docker-compose.dev.yml up -d
+    @echo "⏳ Waiting for services to be ready..."
+    sleep 10
+    @echo "🔄 Running migrations..."
+    docker-compose -f docker-compose.dev.yml exec app npm run db:migrate
+    @echo "🌱 Running all seeders..."
+    just dev-seed-all
+    @echo "✅ Development environment ready with data!"
+
 # Stop development environment
 dev-down:
     docker-compose -f docker-compose.dev.yml down
@@ -27,7 +39,13 @@ dev-restart:
 
 # Rebuild and start development environment
 dev-build:
-    docker-compose -f docker-compose.dev.yml up --build
+    docker-compose -f docker-compose.dev.yml up --build -d
+    @echo "⏳ Waiting for services to be ready..."
+    sleep 10
+    @echo "🌱 Running seeders..."
+    docker-compose -f docker-compose.dev.yml exec app npm run db:seed || echo "⚠️  Seeders already ran or failed"
+    @echo "✅ Development environment ready!"
+    docker-compose -f docker-compose.dev.yml logs -f
 
 # Start production environment (external database)
 prod-up:
@@ -89,6 +107,18 @@ db-test:
     @echo "   - 5 assessee SIAP ASESMEN (TST006-TST010)"
     @echo "   - 5 assessee DENGAN HASIL (TST011-TST015)"
 
+# Run only master data seeders
+db-seed-master:
+    @echo "🏛️  Seeding master wilayah data..."
+    docker-compose -f docker-compose.dev.yml exec app node seeders/seed-master-wilayah.js
+    @echo "✅ Master data seeded!"
+
+# Run only new data seeders  
+db-seed-new:
+    @echo "📝 Seeding additional data..."
+    docker-compose -f docker-compose.dev.yml exec app node seeders/seed-new-data.js
+    @echo "✅ Additional data seeded!"
+
 
 # ========================================
 # Local Development (without Docker)
@@ -109,6 +139,16 @@ start:
 # Run seeders locally
 seed:
     npm run db:seed
+
+# Run all seeders (both Sequelize and manual seeders)
+dev-seed-all:
+    @echo "📊 Running Sequelize seeders..."
+    docker compose -f docker-compose.dev.yml exec app npm run db:seed || echo "⚠️  Sequelize seeders already ran or failed"
+    @echo "🏛️  Running master wilayah seeder..."
+    docker compose -f docker-compose.dev.yml exec app node seeders/seed-master-wilayah.js || echo "⚠️  Master data already seeded"
+    @echo "📝 Running additional data seeders..."
+    docker compose -f docker-compose.dev.yml exec app node seeders/seed-new-data.js || echo "⚠️  Additional data already seeded"
+    @echo "✅ All seeders completed!"
 
 # ========================================
 # Docker Utility Commands
