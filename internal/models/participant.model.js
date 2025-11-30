@@ -20,9 +20,8 @@ const Participant = sequelize.define('Participant', {
         comment: 'NIP Peserta'
     },
     nik: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(16),
         allowNull: true,
-        unique: true,
         comment: 'NIK Peserta'
     },
     nama: {
@@ -45,6 +44,56 @@ const Participant = sequelize.define('Participant', {
         allowNull: true,
         comment: 'Tanggal Lahir'
     },
+    tingkat_pendidikan: {
+        type: DataTypes.ENUM('SD', 'SMP', 'SMA', 'DIPLOMA', 'SARJANA', 'MAGISTER', 'DOKTOR'),
+        allowNull: true,
+        comment: 'Tingkat Pendidikan'
+    },
+    alamat_lengkap: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Alamat Lengkap'
+    },
+    provinsi: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Nama Provinsi'
+    },
+    kota: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Nama Kota/Kabupaten'
+    },
+    kecamatan: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Nama Kecamatan'
+    },
+    kelurahan: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Nama Kelurahan/Desa'
+    },
+    kode_pos: {
+        type: DataTypes.STRING(10),
+        allowNull: true,
+        comment: 'Kode Pos'
+    },
+    status_pegawai: {
+        type: DataTypes.ENUM('PNS', 'PPPK', 'HONORER', 'KONTRAK'),
+        allowNull: true,
+        comment: 'Status Kepegawaian'
+    },
+    usia_pegawai: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        comment: 'Usia sebagai Pegawai'
+    },
+    sertifikat_profesi: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Sertifikat Profesi yang dimiliki'
+    },
     jabatan: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -63,22 +112,7 @@ const Participant = sequelize.define('Participant', {
     provinsi: {
         type: DataTypes.STRING,
         allowNull: true,
-        comment: 'Provinsi'
-    },
-    kab_kota: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Kabupaten/Kota'
-    },
-    kecamatan: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Kecamatan'
-    },
-    desa_kelurahan: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Desa/Kelurahan'
+        comment: 'Nama Provinsi'
     },
     sekolah: {
         type: DataTypes.STRING,
@@ -140,26 +174,7 @@ const Participant = sequelize.define('Participant', {
         allowNull: true,
         comment: 'Usia Peserta'
     },
-    pegawai:{
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Status Pegawai'
-    },
-    status_pegawai: {
-        type: DataTypes.ENUM('PNS', 'PPPK', 'NON_PNS'),
-        allowNull: true,
-        comment: 'Status Pegawai (PNS/PPPK/NON_PNS)'
-    },
-    sertifikasi: {
-        type: DataTypes.ENUM('SUDAH', 'BELUM'),
-        allowNull: true,
-        comment: 'Status Sertifikasi (SUDAH/BELUM)'
-    },
-    tahun_sertifikasi: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        comment: 'Tahun Sertifikasi'
-    },
+
     jadwal: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -175,10 +190,10 @@ const Participant = sequelize.define('Participant', {
         comment: 'ID Asesor yang ditugaskan'
     },
     status: {
-        type: DataTypes.ENUM('SUDAH', 'BELUM'),
+        type: DataTypes.ENUM('BELUM', 'PROSES', 'SELESAI'),
         allowNull: false,
         defaultValue: 'BELUM',
-        comment: 'Status Asesmen (SUDAH/BELUM)'
+        comment: 'Status Asesmen (BELUM/PROSES/SELESAI)'
     },
     akun_id: {
         type: DataTypes.UUID,
