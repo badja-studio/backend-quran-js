@@ -695,10 +695,10 @@ class ExportUseCase {
     async generateParticipantsPDFFromExcel(filters = {}) {
         try {
             const participantRepository = require('../repository/participant.repository');
-            const { count, rows: participants } = await participantRepository.getParticipantsWithPagination({
+            const participants = await participantRepository.findAll({
                 ...filters,
                 limit: 999999,
-                offset: 0
+                page: 1
             });
 
             const html = `
@@ -718,7 +718,7 @@ class ExportUseCase {
                 </head>
                 <body>
                     <h1>Data Peserta</h1>
-                    <p>Total data: ${count} records</p>
+                    <p>Total data: ${participants.count} records</p>
                     <p>Generated on: ${new Date().toLocaleDateString('id-ID')}</p>
                     
                     <table>
@@ -736,7 +736,7 @@ class ExportUseCase {
                             </tr>
                         </thead>
                         <tbody>
-                            ${participants.map((participant, index) => `
+                            ${participants.data.map((participant, index) => `
                                 <tr>
                                     <td>${index + 1}</td>
                                     <td>${participant.no_akun || '-'}</td>
@@ -755,19 +755,53 @@ class ExportUseCase {
                 </html>
             `;
 
-            const pdf = require('html-pdf');
+            // Use PDFKit for stable PDF generation
+            const PDFDocument = require('pdfkit');
+            const chunks = [];
+            const doc = new PDFDocument({ 
+                layout: 'landscape',
+                margin: 50
+            });
+
+            // Collect PDF data
+            doc.on('data', chunk => chunks.push(chunk));
             
             return new Promise((resolve, reject) => {
-                const options = {
-                    format: 'A4',
-                    orientation: 'landscape',
-                    border: { top: "0.5in", right: "0.5in", bottom: "0.5in", left: "0.5in" }
-                };
-
-                pdf.create(html, options).toBuffer((err, buffer) => {
-                    if (err) reject(new Error(`Failed to generate PDF: ${err.message}`));
-                    else resolve(buffer);
+                doc.on('end', () => {
+                    resolve(Buffer.concat(chunks));
                 });
+
+                doc.on('error', reject);
+
+                // Header styling
+                doc.fontSize(18)
+                   .fillColor('#1a472a')
+                   .font('Helvetica-Bold')
+                   .text('LAPORAN DATA PESERTA', { align: 'center' });
+                
+                doc.moveDown(0.5);
+                
+                // Info section
+                doc.fontSize(11)
+                   .fillColor('#495057')
+                   .font('Helvetica')
+                   .text(`Total Data: ${participants.count} records`)
+                   .text(`Generated on: ${new Date().toLocaleDateString('id-ID')}`);
+                
+                doc.moveDown(1);
+                
+                // Simple table for participants
+                participants.data.forEach((participant, index) => {
+                    if (doc.y > 500) doc.addPage();
+                    
+                    doc.fontSize(10)
+                       .fillColor('#212529')
+                       .font('Helvetica')
+                       .text(`${index + 1}. ${participant.nama} (${participant.nip})`, { align: 'left' });
+                    doc.moveDown(0.3);
+                });
+
+                doc.end();
             });
 
         } catch (error) {
@@ -779,10 +813,10 @@ class ExportUseCase {
     async generateAssessorsPDFFromExcel(filters = {}) {
         try {
             const assessorRepository = require('../repository/assessor.repository');
-            const { count, rows: assessors } = await assessorRepository.getAssessorsWithPagination({
+            const assessors = await assessorRepository.findAll({
                 ...filters,
                 limit: 999999,
-                offset: 0
+                page: 1
             });
 
             const html = `
@@ -802,7 +836,7 @@ class ExportUseCase {
                 </head>
                 <body>
                     <h1>Data Asesor</h1>
-                    <p>Total data: ${count} records</p>
+                    <p>Total data: ${assessors.count} records</p>
                     <p>Generated on: ${new Date().toLocaleDateString('id-ID')}</p>
                     
                     <table>
@@ -817,7 +851,7 @@ class ExportUseCase {
                             </tr>
                         </thead>
                         <tbody>
-                            ${assessors.map((assessor, index) => `
+                            ${assessors.data.map((assessor, index) => `
                                 <tr>
                                     <td>${index + 1}</td>
                                     <td>${assessor.name || '-'}</td>
@@ -833,19 +867,53 @@ class ExportUseCase {
                 </html>
             `;
 
-            const pdf = require('html-pdf');
+            // Use PDFKit for stable PDF generation
+            const PDFDocument = require('pdfkit');
+            const chunks = [];
+            const doc = new PDFDocument({ 
+                layout: 'portrait',
+                margin: 50
+            });
+
+            // Collect PDF data
+            doc.on('data', chunk => chunks.push(chunk));
             
             return new Promise((resolve, reject) => {
-                const options = {
-                    format: 'A4',
-                    orientation: 'portrait',
-                    border: { top: "0.5in", right: "0.5in", bottom: "0.5in", left: "0.5in" }
-                };
-
-                pdf.create(html, options).toBuffer((err, buffer) => {
-                    if (err) reject(new Error(`Failed to generate PDF: ${err.message}`));
-                    else resolve(buffer);
+                doc.on('end', () => {
+                    resolve(Buffer.concat(chunks));
                 });
+
+                doc.on('error', reject);
+
+                // Header styling
+                doc.fontSize(18)
+                   .fillColor('#1a472a')
+                   .font('Helvetica-Bold')
+                   .text('LAPORAN DATA ASESOR', { align: 'center' });
+                
+                doc.moveDown(0.5);
+                
+                // Info section
+                doc.fontSize(11)
+                   .fillColor('#495057')
+                   .font('Helvetica')
+                   .text(`Total Data: ${assessors.count} records`)
+                   .text(`Generated on: ${new Date().toLocaleDateString('id-ID')}`);
+                
+                doc.moveDown(1);
+                
+                // Simple list for assessors
+                assessors.data.forEach((assessor, index) => {
+                    if (doc.y > 700) doc.addPage();
+                    
+                    doc.fontSize(10)
+                       .fillColor('#212529')
+                       .font('Helvetica')
+                       .text(`${index + 1}. ${assessor.name} - ${assessor.email}`, { align: 'left' });
+                    doc.moveDown(0.3);
+                });
+
+                doc.end();
             });
 
         } catch (error) {

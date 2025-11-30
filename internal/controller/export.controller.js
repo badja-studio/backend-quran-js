@@ -153,7 +153,7 @@ class ExportController {
                 ...req.query,
                 status: 'BELUM'
             };
-            const pdfBuffer = await exportUseCase.generateParticipantsPDF(filters);
+            const pdfBuffer = await exportUseCase.generateParticipantsPDFFromExcel(filters);
 
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=data-peserta-belum-asesmen-${new Date().toISOString().split('T')[0]}.pdf`);
@@ -199,7 +199,7 @@ class ExportController {
                 status: 'BELUM',
                 hasAssessor: true
             };
-            const pdfBuffer = await exportUseCase.generateParticipantsPDF(filters);
+            const pdfBuffer = await exportUseCase.generateParticipantsPDFFromExcel(filters);
 
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=data-peserta-siap-asesmen-${new Date().toISOString().split('T')[0]}.pdf`);
