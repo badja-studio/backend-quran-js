@@ -58,7 +58,7 @@ function setupAssociations() {
 
     Assessor.hasMany(Assessment, {
         foreignKey: 'asesor_id',
-        as: 'assessments'
+        as: 'assessor_assessments'
     });
 
     // Assessment associations
@@ -70,12 +70,6 @@ function setupAssociations() {
     Assessment.belongsTo(Assessor, {
         foreignKey: 'asesor_id',
         as: 'assessor'
-    });
-
-    // Participant has many assessments
-    Participant.hasMany(Assessment, {
-        foreignKey: 'peserta_id',
-        as: 'assessments'
     });
 }
 
