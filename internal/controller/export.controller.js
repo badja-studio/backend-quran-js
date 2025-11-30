@@ -21,11 +21,13 @@ class ExportController {
         }
     }
 
-    // Export participants to PDF
+    // Export participants to PDF (Excel data rendered as PDF)
     async exportParticipantsPDF(req, res) {
         try {
             const filters = req.query;
-            const pdfBuffer = await exportUseCase.generateParticipantsPDF(filters);
+            
+            // Generate PDF from Excel data using HTML conversion
+            const pdfBuffer = await exportUseCase.generateParticipantsPDFFromExcel(filters);
 
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=data-peserta-${new Date().toISOString().split('T')[0]}.pdf`);
@@ -60,11 +62,13 @@ class ExportController {
         }
     }
 
-    // Export assessors to PDF
+    // Export assessors to PDF (Excel data rendered as PDF)
     async exportAssessorsPDF(req, res) {
         try {
             const filters = req.query;
-            const pdfBuffer = await exportUseCase.generateAssessorsPDF(filters);
+            
+            // Generate PDF from Excel data using HTML conversion
+            const pdfBuffer = await exportUseCase.generateAssessorsPDFFromExcel(filters);
 
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=data-asesor-${new Date().toISOString().split('T')[0]}.pdf`);
@@ -99,11 +103,13 @@ class ExportController {
         }
     }
 
-    // Export assessments to PDF
+    // Export assessments to PDF (Excel data rendered as PDF)
     async exportAssessmentsPDF(req, res) {
         try {
             const filters = req.query;
-            const pdfBuffer = await exportUseCase.generateAssessmentsPDF(filters);
+            
+            // Generate PDF from Excel data using HTML conversion
+            const pdfBuffer = await exportUseCase.generateAssessmentsPDFFromExcel(filters);
 
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=data-hasil-asesmen-${new Date().toISOString().split('T')[0]}.pdf`);
