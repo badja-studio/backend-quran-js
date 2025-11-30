@@ -25,10 +25,9 @@
  *           enum: [A, B, C, D, E]
  *           description: Letter grade
  *         nilai:
- *           type: integer
+ *           type: number
  *           minimum: 0
- *           maximum: 100
- *           description: Numeric score
+ *           description: Numeric score (dapat berupa desimal, min: 0, boleh 0 tapi tidak boleh minus)
  *         kategori:
  *           type: string
  *           description: Assessment category
@@ -63,10 +62,10 @@
  *           enum: [A, B, C, D, E]
  *           example: "A"
  *         nilai:
- *           type: integer
+ *           type: number
  *           minimum: 0
- *           maximum: 100
- *           example: 95
+ *           example: 85.5
+ *           description: Numeric score (dapat berupa desimal, min: 0, boleh 0 tapi tidak boleh minus)
  *         kategori:
  *           type: string
  *           example: "Tajwid"

@@ -56,9 +56,15 @@ class AssessmentUsecase {
       // Validate required fields
       const requiredFields = ['peserta_id', 'asesor_id', 'huruf', 'nilai', 'kategori'];
       for (const field of requiredFields) {
-        if (!assessmentData[field]) {
+        if (assessmentData[field] === undefined || assessmentData[field] === null) {
           throw new Error(`${field} is required`);
         }
+      }
+
+      // Validate nilai: must be >= 0 (boleh 0, tidak boleh minus)
+      const nilai = parseFloat(assessmentData.nilai);
+      if (isNaN(nilai) || nilai < 0) {
+        throw new Error(`nilai must be a number >= 0 (current: ${assessmentData.nilai})`);
       }
 
       // Check if participant exists
@@ -103,9 +109,15 @@ class AssessmentUsecase {
       const requiredFields = ['peserta_id', 'asesor_id', 'huruf', 'nilai', 'kategori'];
       for (const assessmentData of assessmentsData) {
         for (const field of requiredFields) {
-          if (!assessmentData[field]) {
+          if (assessmentData[field] === undefined || assessmentData[field] === null) {
             throw new Error(`${field} is required in all assessments`);
           }
+        }
+        
+        // Validate nilai: must be >= 0 (boleh 0, tidak boleh minus)
+        const nilai = parseFloat(assessmentData.nilai);
+        if (isNaN(nilai) || nilai < 0) {
+          throw new Error(`nilai must be a number >= 0 (current: ${assessmentData.nilai})`);
         }
       }
 
@@ -163,6 +175,14 @@ class AssessmentUsecase {
 
   async updateAssessment(id, assessmentData) {
     try {
+      // Validate nilai if provided: must be >= 0 (boleh 0, tidak boleh minus)
+      if (assessmentData.nilai !== undefined && assessmentData.nilai !== null) {
+        const nilai = parseFloat(assessmentData.nilai);
+        if (isNaN(nilai) || nilai < 0) {
+          throw new Error(`nilai must be a number >= 0 (current: ${assessmentData.nilai})`);
+        }
+      }
+
       const assessment = await assessmentRepository.update(id, assessmentData);
       if (!assessment) {
         throw new Error('Assessment not found');
