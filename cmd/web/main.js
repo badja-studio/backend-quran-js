@@ -6,11 +6,15 @@ const config = require('../../config/config');
 const { connectDB } = require('../../config/database');
 const setupSwagger = require('../../config/swagger');
 const routes = require('../../internal/routes');
+const { generalLimiter } = require('../../internal/middleware/rateLimiter.middleware');
 
 const app = express();
 
 // Middleware
 app.use(helmet());
+
+// Rate limiting middleware - Apply to all requests
+app.use(generalLimiter);
 
 // CORS configuration
 const corsOptions = {

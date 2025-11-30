@@ -10,6 +10,9 @@ Backend API untuk sistem manajemen Quran menggunakan Express.js, PostgreSQL, dan
 - **Swagger** - API Documentation
 - **Docker** - Containerization
 - **Layered Architecture** - Controller → UseCase → Repository
+- **Rate Limiting** - DDoS protection and abuse prevention
+- **Security Middleware** - Helmet, CORS, authentication
+- **Master Data** - Indonesian regional data (provinces, cities, districts, villages)
 
 ## 📁 Struktur Folder
 
@@ -157,8 +160,19 @@ npm start
 ## 📚 API Documentation
 
 Setelah aplikasi berjalan, akses dokumentasi Swagger di:
-- Development: `http://localhost:3000/api-docs`
-- Swagger JSON: `http://localhost:3000/api-docs.json`
+- Development: `http://localhost:3012/api-docs`
+- Swagger JSON: `http://localhost:3012/api-docs.json`
+
+## 🛡️ Rate Limiting & Security
+
+API ini dilengkapi dengan rate limiting untuk melindungi dari DDoS dan abuse:
+
+- **General Rate Limiter**: 300 req/15min (dev) | 100 req/15min (prod)
+- **Auth Rate Limiter**: 20 attempts/15min (dev) | 5 attempts/15min (prod)  
+- **API Rate Limiter**: 500 req/15min (dev) | 200 req/15min (prod)
+- **Master Data Rate Limiter**: 1000 req/15min (dev) | 300 req/15min (prod)
+
+Untuk dokumentasi lengkap, lihat: [docs/RATE_LIMITING.md](docs/RATE_LIMITING.md)
 
 ## 🔧 Environment Variables
 
