@@ -223,6 +223,25 @@ class ParticipantController {
     }
   }
 
+  async registerParticipant(req, res) {
+    try {
+      const participantData = req.body;
+      const participant = await participantUsecase.registerParticipant(participantData);
+
+      res.status(201).json({
+        success: true,
+        message: 'Participant registered successfully',
+        data: participant
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('already exists') || error.message.includes('required') ? 400 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
   async updateParticipant(req, res) {
     try {
       const { id } = req.params;

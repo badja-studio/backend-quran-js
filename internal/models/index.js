@@ -4,6 +4,10 @@ const Participant = require('./participant.model');
 const Assessor = require('./assessor.model');
 const Assessment = require('./assessment.model');
 const Admin = require('./admin.model');
+const Province = require('./province.model');
+const City = require('./city.model');
+const District = require('./district.model');
+const Village = require('./village.model');
 
 // Setup associations
 function setupAssociations() {
@@ -71,6 +75,41 @@ function setupAssociations() {
         foreignKey: 'asesor_id',
         as: 'assessor'
     });
+
+    // Master data associations
+    // Province has many cities
+    Province.hasMany(City, {
+        foreignKey: 'provinsi_id',
+        as: 'cities'
+    });
+
+    // City belongs to province and has many districts
+    City.belongsTo(Province, {
+        foreignKey: 'provinsi_id',
+        as: 'province'
+    });
+
+    City.hasMany(District, {
+        foreignKey: 'kota_id',
+        as: 'districts'
+    });
+
+    // District belongs to city and has many villages
+    District.belongsTo(City, {
+        foreignKey: 'kota_id',
+        as: 'city'
+    });
+
+    District.hasMany(Village, {
+        foreignKey: 'kecamatan_id',
+        as: 'villages'
+    });
+
+    // Village belongs to district
+    Village.belongsTo(District, {
+        foreignKey: 'kecamatan_id',
+        as: 'district'
+    });
 }
 
 // Setup associations
@@ -82,5 +121,9 @@ module.exports = {
     Participant,
     Assessor,
     Assessment,
-    Admin
+    Admin,
+    Province,
+    City,
+    District,
+    Village
 };

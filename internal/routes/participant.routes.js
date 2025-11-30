@@ -3,7 +3,10 @@ const router = express.Router();
 const participantController = require('../controller/participant.controller');
 const { authenticateToken } = require('../middleware/auth.middleware');
 
-// Apply authentication middleware to all routes
+// Routes without authentication
+router.post('/register', (req, res) => participantController.registerParticipant(req, res));
+
+// Apply authentication middleware to all other routes
 router.use(authenticateToken);
 
 // GET routes

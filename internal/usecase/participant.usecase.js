@@ -121,6 +121,60 @@ class ParticipantUsecase {
     }
   }
 
+  async registerParticipant(participantData) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      // Validate required fields including password
+      const requiredFields = ['no_akun', 'nip', 'nama', 'jenis_kelamin', 'password'];
+      for (const field of requiredFields) {
+        if (!participantData[field]) {
+          throw new Error(`${field} is required`);
+        }
+      }
+
+      // Check if participant with same NIP already exists
+      const existingParticipant = await participantRepository.findByNip(participantData.nip);
+      if (existingParticipant) {
+        throw new Error('Participant with this NIP already exists');
+      }
+
+      // Create user account first with NIP as username and provided password
+      const userData = {
+        username: participantData.nip,
+        password: participantData.password, // Use provided password
+        role: 'participant'
+      };
+
+      const user = await authRepository.createUser(userData);
+
+      // Separate participant data from password
+      const { password, ...participantDataWithoutPassword } = participantData;
+
+      // Create participant with the user account ID
+      const participant = await participantRepository.create({
+        ...participantDataWithoutPassword,
+        akun_id: user.id,
+        status: 'BELUM'
+      }, { transaction });
+
+      await transaction.commit();
+
+      // Return participant with user info (without password)
+      return {
+        ...participant.toJSON(),
+        akun: {
+          id: user.id,
+          username: user.username,
+          role: user.role
+        }
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw new Error(`Failed to register participant: ${error.message}`);
+    }
+  }
+
   async updateParticipant(id, participantData) {
     try {
       const participant = await participantRepository.update(id, participantData);

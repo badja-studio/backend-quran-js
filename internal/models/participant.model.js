@@ -19,6 +19,12 @@ const Participant = sequelize.define('Participant', {
         unique: true,
         comment: 'NIP Peserta'
     },
+    nik: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+        comment: 'NIK Peserta'
+    },
     nama: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -33,6 +39,11 @@ const Participant = sequelize.define('Participant', {
         type: DataTypes.STRING,
         allowNull: true,
         comment: 'Tempat Lahir'
+    },
+    tanggal_lahir: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+        comment: 'Tanggal Lahir'
     },
     jabatan: {
         type: DataTypes.STRING,
@@ -59,6 +70,16 @@ const Participant = sequelize.define('Participant', {
         allowNull: true,
         comment: 'Kabupaten/Kota'
     },
+    kecamatan: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Kecamatan'
+    },
+    desa_kelurahan: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Desa/Kelurahan'
+    },
     sekolah: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -79,6 +100,16 @@ const Participant = sequelize.define('Participant', {
         allowNull: true,
         comment: 'Nama Perguruan Tinggi'
     },
+    asal_kampus: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Asal Kampus'
+    },
+    fakultas: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Fakultas'
+    },
     jenis_pt: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -89,6 +120,21 @@ const Participant = sequelize.define('Participant', {
         allowNull: true,
         comment: 'Tahun Lulus'
     },
+    tingkat_sekolah: {
+        type: DataTypes.ENUM('MI', 'MTs', 'MA'),
+        allowNull: true,
+        comment: 'Tingkat Sekolah (MI/MTs/MA)'
+    },
+    nama_sekolah: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Nama Sekolah'
+    },
+    alamat_sekolah: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Alamat Sekolah'
+    },
     usia: {
         type: DataTypes.INTEGER,
         allowNull: true,
@@ -98,6 +144,21 @@ const Participant = sequelize.define('Participant', {
         type: DataTypes.STRING,
         allowNull: true,
         comment: 'Status Pegawai'
+    },
+    status_pegawai: {
+        type: DataTypes.ENUM('PNS', 'PPPK', 'NON_PNS'),
+        allowNull: true,
+        comment: 'Status Pegawai (PNS/PPPK/NON_PNS)'
+    },
+    sertifikasi: {
+        type: DataTypes.ENUM('SUDAH', 'BELUM'),
+        allowNull: true,
+        comment: 'Status Sertifikasi (SUDAH/BELUM)'
+    },
+    tahun_sertifikasi: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        comment: 'Tahun Sertifikasi'
     },
     jadwal: {
         type: DataTypes.STRING,

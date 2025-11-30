@@ -20,6 +20,9 @@
  *         nip:
  *           type: string
  *           description: NIP (Employee ID) of the participant
+ *         nik:
+ *           type: string
+ *           description: NIK (National ID) of the participant
  *         nama:
  *           type: string
  *           description: Name of the participant
@@ -30,6 +33,10 @@
  *         tempat_lahir:
  *           type: string
  *           description: Place of birth
+ *         tanggal_lahir:
+ *           type: string
+ *           format: date
+ *           description: Date of birth
  *         jabatan:
  *           type: string
  *           description: Position/Job title
@@ -63,6 +70,45 @@
  *         tahun_lulus:
  *           type: integer
  *           description: Graduation year
+ *         asal_kampus:
+ *           type: string
+ *           description: Campus origin
+ *         fakultas:
+ *           type: string
+ *           description: Faculty
+ *         tingkat_sekolah:
+ *           type: string
+ *           enum: [MI, MTs, MA]
+ *           description: School level (MI/MTs/MA)
+ *         nama_sekolah:
+ *           type: string
+ *           description: School name
+ *         alamat_sekolah:
+ *           type: string
+ *           description: School address
+ *         kecamatan:
+ *           type: string
+ *           description: District
+ *         desa_kelurahan:
+ *           type: string
+ *           description: Village/Sub-district
+ *         status_pegawai:
+ *           type: string
+ *           enum: [PNS, PPPK, NON_PNS]
+ *           description: Employee status (PNS/PPPK/NON_PNS)
+ *         sertifikasi:
+ *           type: string
+ *           enum: [SUDAH, BELUM]
+ *           description: Certification status (SUDAH/BELUM)
+ *         tahun_sertifikasi:
+ *           type: integer
+ *           description: Certification year
+ *         usia:
+ *           type: integer
+ *           description: Age
+ *         pegawai:
+ *           type: string
+ *           description: Employee type
  *         jadwal:
  *           type: string
  *           format: date-time
@@ -143,6 +189,115 @@
  *           type: string
  *           format: date-time
  *           description: Schedule
+ *     
+ *     ParticipantRegister:
+ *       type: object
+ *       required:
+ *         - no_akun
+ *         - nip
+ *         - nama
+ *         - jenis_kelamin
+ *         - password
+ *       properties:
+ *         no_akun:
+ *           type: string
+ *           description: Account number of the participant
+ *         nip:
+ *           type: string
+ *           description: NIP (Employee ID) - will be used as username
+ *         nik:
+ *           type: string
+ *           description: NIK (National ID) of the participant
+ *         nama:
+ *           type: string
+ *           description: Name of the participant
+ *         jenis_kelamin:
+ *           type: string
+ *           enum: [L, P]
+ *           description: Gender (L for Male, P for Female)
+ *         tempat_lahir:
+ *           type: string
+ *           description: Place of birth
+ *         tanggal_lahir:
+ *           type: string
+ *           format: date
+ *           description: Date of birth
+ *         jabatan:
+ *           type: string
+ *           description: Position/Job title
+ *         jenjang:
+ *           type: string
+ *           description: Education level
+ *         level:
+ *           type: string
+ *           description: Skill level
+ *         provinsi:
+ *           type: string
+ *           description: Province
+ *         kab_kota:
+ *           type: string
+ *           description: City/Regency
+ *         kecamatan:
+ *           type: string
+ *           description: District
+ *         desa_kelurahan:
+ *           type: string
+ *           description: Village/Sub-district
+ *         sekolah:
+ *           type: string
+ *           description: School name
+ *         nama_sekolah:
+ *           type: string
+ *           description: School name (detailed)
+ *         alamat_sekolah:
+ *           type: string
+ *           description: School address
+ *         tingkat_sekolah:
+ *           type: string
+ *           enum: [MI, MTs, MA]
+ *           description: School level (MI/MTs/MA)
+ *         pendidikan:
+ *           type: string
+ *           description: Educational background
+ *         prodi:
+ *           type: string
+ *           description: Study program
+ *         perguruan_tinggi:
+ *           type: string
+ *           description: University name
+ *         asal_kampus:
+ *           type: string
+ *           description: Campus origin
+ *         fakultas:
+ *           type: string
+ *           description: Faculty
+ *         jenis_pt:
+ *           type: string
+ *           description: University type
+ *         tahun_lulus:
+ *           type: integer
+ *           description: Graduation year
+ *         status_pegawai:
+ *           type: string
+ *           enum: [PNS, PPPK, NON_PNS]
+ *           description: Employee status (PNS/PPPK/NON_PNS)
+ *         sertifikasi:
+ *           type: string
+ *           enum: [SUDAH, BELUM]
+ *           description: Certification status (SUDAH/BELUM)
+ *         tahun_sertifikasi:
+ *           type: integer
+ *           description: Certification year
+ *         usia:
+ *           type: integer
+ *           description: Age
+ *         pegawai:
+ *           type: string
+ *           description: Employee type
+ *         password:
+ *           type: string
+ *           format: password
+ *           description: Password for login account
  *     
  *     PaginatedParticipants:
  *       type: object
@@ -557,4 +712,86 @@
  *                       type: integer
  *                     BELUM:
  *                       type: integer
+
+/**
+ * @swagger
+ * /api/participants/register:
+ *   post:
+ *     summary: Register a new participant (No authentication required)
+ *     tags: [Participants]
+ *     description: Register a new participant with all required information including password for login account
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ParticipantRegister'
+ *           example:
+ *             no_akun: "PA001"
+ *             nip: "123456789"
+ *             nik: "1234567890123456"
+ *             nama: "John Doe"
+ *             jenis_kelamin: "L"
+ *             tempat_lahir: "Jakarta"
+ *             tanggal_lahir: "1990-01-01"
+ *             jabatan: "Guru"
+ *             pendidikan: "S1"
+ *             prodi: "Pendidikan Islam"
+ *             perguruan_tinggi: "UIN Jakarta"
+ *             asal_kampus: "Jakarta"
+ *             fakultas: "Fakultas Tarbiyah"
+ *             tahun_lulus: 2015
+ *             tingkat_sekolah: "MA"
+ *             nama_sekolah: "MA Al-Hikmah"
+ *             alamat_sekolah: "Jl. Pendidikan No. 123"
+ *             provinsi: "DKI Jakarta"
+ *             kab_kota: "Jakarta Pusat"
+ *             kecamatan: "Menteng"
+ *             desa_kelurahan: "Gondangdia"
+ *             status_pegawai: "PNS"
+ *             sertifikasi: "SUDAH"
+ *             tahun_sertifikasi: 2018
+ *             password: "securepassword123"
+ *     responses:
+ *       201:
+ *         description: Participant registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Participant registered successfully"
+ *                 data:
+ *                   $ref: '#/components/schemas/Participant'
+ *       400:
+ *         description: Bad request - validation error or participant already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Participant with this NIP already exists"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to register participant"
  */

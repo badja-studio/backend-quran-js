@@ -9,6 +9,7 @@ const assessmentRoutes = require('./assessment.routes');
 const dashboardRoutes = require('./dashboard.routes');
 const exportRoutes = require('./export.routes');
 const adminRoutes = require('./admin.routes');
+const masterRoutes = require('./master.routes');
 
 router.use('/auth', authRoutes);
 router.use('/health', healthRoutes);
@@ -18,5 +19,6 @@ router.use('/assessments', assessmentRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/export', exportRoutes);
 router.use('/admins', adminRoutes);
+router.use('/master', masterRoutes);
 
 module.exports = router;
