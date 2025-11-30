@@ -26,8 +26,8 @@ class ParticipantRepository {
       'jenjang': 'jenjang',
       'level': 'level',
       'provinsi': 'provinsi',
-      'kab_kota': 'kab_kota',
-      'tahun_lulus': 'tahun_lulus'
+      'tahun_lulus': 'tahun_lulus',
+      'kota': 'kota'
     };
 
     const orderField = validSortFields[sortBy] || 'createdAt';
@@ -42,7 +42,7 @@ class ParticipantRepository {
         { jabatan: { [Op.iLike]: `%${search}%` } },
         { sekolah: { [Op.iLike]: `%${search}%` } },
         { provinsi: { [Op.iLike]: `%${search}%` } },
-        { kab_kota: { [Op.iLike]: `%${search}%` } }
+        { kota: { [Op.iLike]: `%${search}%` } }
       ]
     } : {};
 
