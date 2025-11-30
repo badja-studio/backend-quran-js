@@ -47,11 +47,11 @@ services:
       CORS_ALLOWED_ORIGINS: "*"
       # Rate Limiting Configuration (Development - More Permissive)
       RATE_LIMIT_WINDOW_MS: 900000  # 15 minutes
-      RATE_LIMIT_MAX_REQUESTS: 300  # 300 requests per 15 minutes per IP
+      RATE_LIMIT_MAX_REQUESTS: 1500  # 1500 requests per 15 minutes per IP
       AUTH_RATE_LIMIT_WINDOW_MS: 900000  # 15 minutes
-      AUTH_RATE_LIMIT_MAX_REQUESTS: 20   # 20 auth attempts per 15 minutes per IP
+      AUTH_RATE_LIMIT_MAX_REQUESTS: 200  # 200 auth attempts per 15 minutes per IP
       API_RATE_LIMIT_WINDOW_MS: 900000   # 15 minutes
-      API_RATE_LIMIT_MAX_REQUESTS: 500   # 500 API requests per 15 minutes per IP
+      API_RATE_LIMIT_MAX_REQUESTS: 1000   # 1000 API requests per 15 minutes per IP
       MASTER_DATA_RATE_LIMIT_WINDOW_MS: 900000  # 15 minutes
       MASTER_DATA_RATE_LIMIT_MAX_REQUESTS: 1000 # 1000 master data requests per 15 minutes per IP
     volumes:
