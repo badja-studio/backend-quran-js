@@ -126,7 +126,7 @@ class ParticipantUsecase {
     
     try {
       // Validate required fields including password
-      const requiredFields = ['no_akun', 'nip', 'nama', 'jenis_kelamin', 'password'];
+      const requiredFields = ['nama', 'jenis_kelamin','email','no_handphone', 'password'];
       for (const field of requiredFields) {
         if (!participantData[field]) {
           throw new Error(`${field} is required`);
@@ -139,9 +139,9 @@ class ParticipantUsecase {
         throw new Error('Participant with this NIP already exists');
       }
 
-      // Create user account first with NIP as username and provided password
+      // Create user account first with email as username and provided password
       const userData = {
-        username: participantData.nip,
+        username: participantData.email,
         password: participantData.password, // Use provided password
         role: 'participant'
       };

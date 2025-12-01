@@ -7,16 +7,25 @@ const Participant = sequelize.define('Participant', {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
-    no_akun: {
+    email:{
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
+        comment: 'Email Peserta'
+    },
+    no_handphone: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Nomor Handphone Peserta'
+    },
+    no_akun: {
+        type: DataTypes.STRING,
+        allowNull: true,
         comment: 'Nomor Akun Peserta'
     },
     nip: {
         type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
+        allowNull: true,
         comment: 'NIP Peserta'
     },
     nik: {
@@ -109,11 +118,6 @@ const Participant = sequelize.define('Participant', {
         allowNull: true,
         comment: 'Level'
     },
-    provinsi: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Nama Provinsi'
-    },
     sekolah: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -133,6 +137,11 @@ const Participant = sequelize.define('Participant', {
         type: DataTypes.STRING,
         allowNull: true,
         comment: 'Nama Perguruan Tinggi'
+    },
+    mata_pelajaran:{
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Mata Pelajaran'
     },
     asal_kampus: {
         type: DataTypes.STRING,
