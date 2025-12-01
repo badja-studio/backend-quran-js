@@ -10,7 +10,7 @@ module.exports = {
     if (!tableInfo.email) {
       await queryInterface.addColumn('participants', 'email', {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
         unique: true,
         comment: 'Email Peserta'
       });

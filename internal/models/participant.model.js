@@ -9,7 +9,7 @@ const Participant = sequelize.define('Participant', {
     },
     email:{
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
         unique: true,
         comment: 'Email Peserta'
     },
