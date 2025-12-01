@@ -10,6 +10,10 @@ const { generalLimiter } = require('../../internal/middleware/rateLimiter.middle
 
 const app = express();
 
+// Trust proxy - Enable if behind reverse proxy (nginx, load balancer, etc.)
+// This allows Express to correctly identify client IP from X-Forwarded-For header
+app.set('trust proxy', true);
+
 // Middleware
 app.use(helmet());
 
