@@ -27,7 +27,7 @@ const SCORING_RULES = {
             // Other Ahkam types
             default: { deduction: 0.5 }
         },
-        categories: ['ahkam', 'ahkamul_huruf', 'ahkamul huruf', 'tanaffus', 'izhhar', 'gunna']
+        categories: ['ahkam', 'ahkamul_huruf', 'ahkamul huruf', 'tanaffus', 'izhhar', 'gunna', "ikhfa'", 'ikhfa']
     },
     MAD: {
         initial: 13.5,
@@ -48,13 +48,19 @@ const SCORING_RULES = {
         initial: 6,
         percentage: 6,
         deduction: 1,
-        categories: ['gharib', 'kalimat_gharib', 'kalimat gharib']
+        categories: ['gharib', 'kalimat_gharib', 'kalimat gharib', 'iysmam', 'badal']
     },
     KELANCARAN: {
         initial: 2.5,
         percentage: 3,
         deduction: 2.5,
-        categories: ['kelancaran', 'fluency', 'lancar']
+        categories: ['kelancaran', 'fluency', 'lancar', 'tidak lancar', 'kurang lancar']
+    },
+    PENGURANGAN: {
+        initial: 0,
+        percentage: 0,
+        deduction: 100, // Heavy penalty for complete inability
+        categories: ['pengurangan', 'penalty', 'tidak bisa membaca', 'tidak bisa']
     }
 };
 
@@ -152,137 +158,246 @@ function calculateCategoryScore(categoryKey, errorCount, subType = 'default') {
 }
 
 /**
+ * Calculate deduction for a category based on errors and item count
+ * Ensures fair distribution: maxDeduction per item = categoryInitialScore / itemCount
+ * Each item's deduction is capped at maxDeductionPerItem
+ * @param {string} categoryKey - Normalized category key
+ * @param {Array} items - Array of items with their error values
+ * @param {number} itemCount - Number of items in this category
+ * @param {string} subType - Specific sub-type for categories with rules (AHKAM, MAD)
+ * @returns {number} - Total deduction points
+ */
+function calculateCategoryDeductionNew(categoryKey, items, itemCount, subType = 'default') {
+    if (!items || items.length === 0 || itemCount === 0) return 0;
+    
+    const rule = SCORING_RULES[categoryKey];
+    if (!rule) return 0;
+    
+    // Calculate max deduction per item for fair distribution
+    const maxDeductionPerItem = rule.initial / itemCount;
+    
+    // Get the standard deduction rate
+    let standardDeductionPerError = 0;
+    if (rule.rules) {
+        const subRule = rule.rules[subType] || rule.rules.default;
+        standardDeductionPerError = subRule.deduction;
+    } else {
+        standardDeductionPerError = rule.deduction;
+    }
+    
+    // Calculate deduction per item, capped at maxDeductionPerItem
+    let totalDeduction = 0;
+    items.forEach(item => {
+        const itemErrors = parseInt(item.errors) || 0;
+        const rawItemDeduction = itemErrors * standardDeductionPerError;
+        
+        // Cap each item's deduction at maxDeductionPerItem
+        const cappedItemDeduction = Math.min(rawItemDeduction, maxDeductionPerItem);
+        totalDeduction += cappedItemDeduction;
+    });
+    
+    // Final cap at category maximum (safety net)
+    return Math.min(totalDeduction, rule.initial);
+}
+
+/**
  * Process assessment data and calculate scores for all categories
  * @param {Array} assessments - Array of assessment records
  * @returns {Object} - Complete scoring breakdown
  */
 function calculateParticipantScores(assessments) {
-    // Group assessments by category and count errors
-    const categoryErrors = {};
-    const madTypeErrors = {};
-    const ahkamTypeErrors = {};
+    // Group assessments by category and count items + errors
+    const categoryData = {};
+    const madTypeData = {};
+    const ahkamTypeData = {};
     
     assessments.forEach(assessment => {
         const categoryKey = normalizeCategoryName(assessment.kategori);
         
-        if (!categoryErrors[categoryKey]) {
-            categoryErrors[categoryKey] = 0;
+        // Initialize category data structure
+        if (!categoryData[categoryKey]) {
+            categoryData[categoryKey] = {
+                itemCount: 0,
+                totalErrors: 0,
+                items: []
+            };
         }
         
-        // Count as error if nilai (score) indicates mistake
-        // Assuming lower scores or specific values indicate errors
-        if (assessment.nilai < 100 || assessment.nilai === 0) {
-            categoryErrors[categoryKey]++;
+        // Increment item count for this category
+        categoryData[categoryKey].itemCount++;
+        
+        // nilai represents the number of errors for this item (nilai = 0 means no error)
+        const errorValue = parseInt(assessment.nilai) || 0;
+        categoryData[categoryKey].totalErrors += errorValue;
+        categoryData[categoryKey].items.push({
+            huruf: assessment.huruf,
+            errors: errorValue
+        });
+        
+        // Special handling for Mad sub-types
+        if (categoryKey === 'MAD') {
+            const rawHuruf = (assessment.huruf || '').toLowerCase();
+            const rawCategory = (assessment.kategori || '').toLowerCase();
+            let madType = 'default';
             
-            // Special handling for Mad sub-types
-            if (categoryKey === 'MAD') {
-                const rawCategory = assessment.kategori.toLowerCase();
-                let madType = 'default';
-                
-                if (rawCategory.includes('thabii') || rawCategory.includes('thobi')) {
-                    madType = 'thabii';
-                } else if (rawCategory.includes('qashr')) {
-                    madType = 'qashr';
-                } else if (rawCategory.includes('wajib')) {
-                    madType = 'wajib';
-                } else if (rawCategory.includes('lazim')) {
-                    madType = 'lazim';
-                }
-                
-                if (!madTypeErrors[madType]) {
-                    madTypeErrors[madType] = 0;
-                }
-                madTypeErrors[madType]++;
+            // Check both huruf and kategori for sub-type detection
+            const combined = (rawHuruf + ' ' + rawCategory).toLowerCase();
+            
+            if (combined.includes('thabii') || combined.includes('thabi') || combined.includes('thobi')) {
+                madType = 'thabii';
+            } else if (combined.includes('qashr')) {
+                madType = 'qashr';
+            } else if (combined.includes('wajib')) {
+                madType = 'wajib';
+            } else if (combined.includes('lazim')) {
+                madType = 'lazim';
             }
             
-            // Special handling for Ahkam sub-types
-            if (categoryKey === 'AHKAM') {
-                const rawCategory = assessment.kategori.toLowerCase();
-                let ahkamType = 'default';
-                
-                if (rawCategory.includes('tanaffus')) {
-                    ahkamType = 'tanaffus';
-                } else if (rawCategory.includes('izhhar') || rawCategory.includes('izhar')) {
-                    ahkamType = 'izhhar';
-                } else if (rawCategory.includes('gunna') || rawCategory.includes('ghunna')) {
-                    ahkamType = 'gunna';
-                }
-                
-                if (!ahkamTypeErrors[ahkamType]) {
-                    ahkamTypeErrors[ahkamType] = 0;
-                }
-                ahkamTypeErrors[ahkamType]++;
+            if (!madTypeData[madType]) {
+                madTypeData[madType] = { itemCount: 0, totalErrors: 0, items: [] };
             }
+            madTypeData[madType].itemCount++;
+            madTypeData[madType].totalErrors += errorValue;
+            madTypeData[madType].items.push({
+                huruf: assessment.huruf,
+                errors: errorValue
+            });
+        }
+        
+        // Special handling for Ahkam sub-types
+        if (categoryKey === 'AHKAM') {
+            const rawHuruf = (assessment.huruf || '').toLowerCase();
+            const rawCategory = (assessment.kategori || '').toLowerCase();
+            let ahkamType = 'default';
+            
+            // Check both huruf and kategori for sub-type detection
+            const combined = (rawHuruf + ' ' + rawCategory).toLowerCase();
+            
+            if (combined.includes('tanaffus')) {
+                ahkamType = 'tanaffus';
+            } else if (combined.includes('izhhar') || combined.includes('izhar')) {
+                ahkamType = 'izhhar';
+            } else if (combined.includes('gunna') || combined.includes('ghunna')) {
+                ahkamType = 'gunna';
+            }
+            
+            if (!ahkamTypeData[ahkamType]) {
+                ahkamTypeData[ahkamType] = { itemCount: 0, totalErrors: 0, items: [] };
+            }
+            ahkamTypeData[ahkamType].itemCount++;
+            ahkamTypeData[ahkamType].totalErrors += errorValue;
+            ahkamTypeData[ahkamType].items.push({
+                huruf: assessment.huruf,
+                errors: errorValue
+            });
         }
     });
     
     // Calculate scores for each category
     const categoryScores = {};
     let totalScore = 0;
+    let penaltyDeduction = 0; // For PENGURANGAN category
     
     // Process each main category
     Object.keys(SCORING_RULES).forEach(categoryKey => {
-        const errorCount = categoryErrors[categoryKey] || 0;
+        const catData = categoryData[categoryKey] || { itemCount: 0, totalErrors: 0 };
+        const rule = SCORING_RULES[categoryKey];
         
-        let categoryScore;
+        let totalDeduction = 0;
+        let finalScore = rule.initial;
         
-        if (categoryKey === 'MAD') {
-            // For Mad, calculate based on the most severe sub-type
-            let totalMadErrors = 0;
-            let worstMadType = 'default';
-            let maxDeduction = 0;
-            
-            Object.keys(madTypeErrors).forEach(madType => {
-                const errors = madTypeErrors[madType];
-                totalMadErrors += errors;
+        if (catData.itemCount > 0) {
+            // Special handling for PENGURANGAN category
+            if (categoryKey === 'PENGURANGAN') {
+                // PENGURANGAN affects the overall score, not a specific category
+                // Each error in PENGURANGAN category deducts from the total
+                const maxDeductionPerItem = 100 / catData.itemCount; // Max penalty distributed
+                const rawDeduction = catData.totalErrors * rule.deduction;
+                penaltyDeduction = Math.min(rawDeduction, maxDeductionPerItem * catData.itemCount);
                 
-                // Find the sub-type with highest deduction
-                const rule = SCORING_RULES.MAD.rules[madType] || SCORING_RULES.MAD.rules.default;
-                const deduction = rule.deduction;
-                
-                if (deduction > maxDeduction) {
-                    maxDeduction = deduction;
-                    worstMadType = madType;
-                }
-            });
+                categoryScores[categoryKey] = {
+                    category: categoryKey,
+                    initialScore: 0,
+                    percentage: 0,
+                    itemCount: catData.itemCount,
+                    totalErrors: catData.totalErrors,
+                    totalDeduction: Number(penaltyDeduction.toFixed(2)),
+                    finalScore: 0,
+                    isPenalty: true
+                };
+                return; // Skip adding to totalScore
+            }
             
-            categoryScore = calculateCategoryScore(categoryKey, totalMadErrors, worstMadType);
-        } else if (categoryKey === 'AHKAM') {
-            // For Ahkam, calculate based on the most severe sub-type
-            let totalAhkamErrors = 0;
-            let worstAhkamType = 'default';
-            let maxDeduction = 0;
+            // Calculate max deduction per item to ensure fairness
+            const maxDeductionPerItem = rule.initial / catData.itemCount;
             
-            Object.keys(ahkamTypeErrors).forEach(ahkamType => {
-                const errors = ahkamTypeErrors[ahkamType];
-                totalAhkamErrors += errors;
+            if (categoryKey === 'MAD' && Object.keys(madTypeData).length > 0) {
+                // For Mad, calculate deduction per item with capping
+                Object.keys(madTypeData).forEach(madType => {
+                    const typeData = madTypeData[madType];
+                    const subRule = SCORING_RULES.MAD.rules[madType] || SCORING_RULES.MAD.rules.default;
+                    
+                    // Calculate deduction per item, capped
+                    typeData.items.forEach(item => {
+                        const itemErrors = parseInt(item.errors) || 0;
+                        const rawItemDeduction = itemErrors * subRule.deduction;
+                        const cappedItemDeduction = Math.min(rawItemDeduction, maxDeductionPerItem);
+                        totalDeduction += cappedItemDeduction;
+                    });
+                });
                 
-                // Find the sub-type with highest deduction
-                const rule = SCORING_RULES.AHKAM.rules[ahkamType] || SCORING_RULES.AHKAM.rules.default;
-                const deduction = rule.deduction;
+                // Cap total deduction at category initial score
+                totalDeduction = Math.min(totalDeduction, rule.initial);
+            } else if (categoryKey === 'AHKAM' && Object.keys(ahkamTypeData).length > 0) {
+                // For Ahkam, calculate deduction per item with capping
+                Object.keys(ahkamTypeData).forEach(ahkamType => {
+                    const typeData = ahkamTypeData[ahkamType];
+                    const subRule = SCORING_RULES.AHKAM.rules[ahkamType] || SCORING_RULES.AHKAM.rules.default;
+                    
+                    // Calculate deduction per item, capped
+                    typeData.items.forEach(item => {
+                        const itemErrors = parseInt(item.errors) || 0;
+                        const rawItemDeduction = itemErrors * subRule.deduction;
+                        const cappedItemDeduction = Math.min(rawItemDeduction, maxDeductionPerItem);
+                        totalDeduction += cappedItemDeduction;
+                    });
+                });
                 
-                if (deduction > maxDeduction) {
-                    maxDeduction = deduction;
-                    worstAhkamType = ahkamType;
-                }
-            });
+                // Cap total deduction at category initial score
+                totalDeduction = Math.min(totalDeduction, rule.initial);
+            } else {
+                // Simple categories - calculate deduction with per-item fairness cap
+                totalDeduction = calculateCategoryDeductionNew(
+                    categoryKey, 
+                    catData.items,
+                    catData.itemCount
+                );
+            }
             
-            categoryScore = calculateCategoryScore(categoryKey, totalAhkamErrors, worstAhkamType);
-        } else {
-            categoryScore = calculateCategoryScore(categoryKey, errorCount);
+            finalScore = Math.max(0, rule.initial - totalDeduction);
         }
         
-        categoryScores[categoryKey] = categoryScore;
-        totalScore += categoryScore.finalScore;
+        categoryScores[categoryKey] = {
+            category: categoryKey,
+            initialScore: rule.initial,
+            percentage: rule.percentage,
+            itemCount: catData.itemCount,
+            totalErrors: catData.totalErrors,
+            totalDeduction: Number(totalDeduction.toFixed(2)),
+            finalScore: Number(finalScore.toFixed(2))
+        };
+        
+        totalScore += finalScore;
     });
     
-    // Overall score is now the sum of all categories (should total to 100 max)
-    const overallScore = Number(totalScore.toFixed(2));
+    // Apply penalty deduction to overall score
+    const overallScore = Math.max(0, Number((totalScore - penaltyDeduction).toFixed(2)));
     
     return {
         categoryScores,
         overallScore,
         totalDeduction: Object.values(categoryScores).reduce((sum, cat) => sum + cat.totalDeduction, 0),
+        penaltyDeduction: Number(penaltyDeduction.toFixed(2)),
         assessmentCount: assessments.length,
         calculatedAt: new Date().toISOString()
     };
@@ -322,6 +437,7 @@ module.exports = {
     SCORING_RULES,
     normalizeCategoryName,
     calculateCategoryDeduction,
+    calculateCategoryDeductionNew,
     calculateCategoryScore,
     calculateParticipantScores,
     formatScoresForAPI
