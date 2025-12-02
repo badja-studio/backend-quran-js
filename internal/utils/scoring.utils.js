@@ -295,13 +295,13 @@ function formatScoresForAPI(scoreData) {
     
     return {
         scores: {
-            makhraj: categoryScores.MAKHRAJ?.finalScore || 55.5,
-            sifat: categoryScores.SIFAT?.finalScore || 14.5,
-            ahkam: categoryScores.AHKAM?.finalScore || 8,
-            mad: categoryScores.MAD?.finalScore || 13.5,
-            gharib: categoryScores.GHARIB?.finalScore || 6,
-            kelancaran: categoryScores.KELANCARAN?.finalScore || 2.5,
-            overall: overallScore || defaultOverall
+            makhraj: categoryScores.MAKHRAJ?.finalScore ?? 55.5,
+            sifat: categoryScores.SIFAT?.finalScore ?? 14.5,
+            ahkam: categoryScores.AHKAM?.finalScore ?? 8,
+            mad: categoryScores.MAD?.finalScore ?? 13.5,
+            gharib: categoryScores.GHARIB?.finalScore ?? 6,
+            kelancaran: categoryScores.KELANCARAN?.finalScore ?? 2.5,
+            overall: overallScore ?? defaultOverall
         },
         details: {
             categoryBreakdown: categoryScores,
