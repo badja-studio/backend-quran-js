@@ -2,6 +2,18 @@ const { Participant, Assessor, Assessment, User } = require('../models');
 const { Op } = require('sequelize');
 const { calculateParticipantScores, formatScoresForAPI } = require('../utils/scoring.utils');
 
+// Consistent assessor attributes across all queries
+const ASSESSOR_ATTRIBUTES = [
+  'id', 
+  'name', 
+  'username',
+  'no_telepon',
+  'email',
+  'link_grup_wa',
+  'total_peserta_belum_asesmen',
+  'total_peserta_selesai_asesmen'
+];
+
 class ParticipantRepository {
   async findAll(options = {}) {
     const {
@@ -151,7 +163,7 @@ class ParticipantRepository {
         {
           model: Assessor,
           as: 'assessor',
-          attributes: ['id', 'name', 'email']
+          attributes: ASSESSOR_ATTRIBUTES
         },
         {
           model: User,
@@ -182,7 +194,7 @@ class ParticipantRepository {
         {
           model: Assessor,
           as: 'assessor',
-          attributes: ['id', 'name', 'email']
+          attributes: ASSESSOR_ATTRIBUTES
         },
         {
           model: User,
@@ -200,7 +212,7 @@ class ParticipantRepository {
         {
           model: Assessor,
           as: 'assessor',
-          attributes: ['id', 'name', 'email']
+          attributes: ASSESSOR_ATTRIBUTES
         }
       ]
     });
@@ -324,7 +336,7 @@ class ParticipantRepository {
         {
           model: Assessor,
           as: 'assessor',
-          attributes: ['id', 'name', 'email']
+          attributes: ASSESSOR_ATTRIBUTES
         },
         {
           model: User,
@@ -451,7 +463,7 @@ class ParticipantRepository {
         {
           model: Assessor,
           as: 'assessor',
-          attributes: ['id', 'name', 'email']
+          attributes: ASSESSOR_ATTRIBUTES
         },
         {
           model: User,
@@ -482,7 +494,7 @@ class ParticipantRepository {
         {
           model: Assessor,
           as: 'assessor',
-          attributes: ['id', 'name', 'email']
+          attributes: ASSESSOR_ATTRIBUTES
         },
         {
           model: Assessment,
@@ -491,7 +503,7 @@ class ParticipantRepository {
             {
               model: Assessor,
               as: 'assessor',
-              attributes: ['id', 'name', 'email']
+              attributes: ASSESSOR_ATTRIBUTES
             }
           ]
         }

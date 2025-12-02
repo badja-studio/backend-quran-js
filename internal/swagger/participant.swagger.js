@@ -106,6 +106,8 @@
  *           type: string
  *           format: uuid
  *           description: Assigned assessor ID
+ *         assessor:
+ *           $ref: '#/components/schemas/AssessorProfile'
  *         status:
  *           type: string
  *           enum: [BELUM, PROSES, SELESAI]
@@ -114,6 +116,8 @@
  *           type: string
  *           format: uuid
  *           description: User account ID
+ *         akun:
+ *           $ref: '#/components/schemas/UserBasic'
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -616,6 +620,52 @@
  *         description: Participant not found
  *       500:
  *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     AssessorProfile:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *           description: Assessor ID
+ *         name:
+ *           type: string
+ *           description: Full name of the assessor
+ *         username:
+ *           type: string
+ *           description: Username of the assessor
+ *         no_telepon:
+ *           type: string
+ *           description: Phone number of the assessor
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: Email address of the assessor
+ *         link_grup_wa:
+ *           type: string
+ *           description: WhatsApp group link
+ *         total_peserta_belum_asesmen:
+ *           type: integer
+ *           description: Total participants not yet assessed
+ *         total_peserta_selesai_asesmen:
+ *           type: integer
+ *           description: Total participants already assessed
+ *     
+ *     UserBasic:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *           description: User ID
+ *         username:
+ *           type: string
+ *           description: Username
  */
 
 module.exports = {};
