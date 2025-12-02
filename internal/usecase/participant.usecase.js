@@ -133,6 +133,9 @@ class ParticipantUsecase {
         }
       }
 
+      if (!participantData.nip) {
+        participantData.nip = participantData.nik
+      }
       // Check if participant with same NIP already exists
       const existingParticipant = await participantRepository.findByNip(participantData.nip);
       if (existingParticipant) {
