@@ -28,7 +28,7 @@ class ParticipantUsecase {
 
   async getParticipantByUserId(userId) {
     try {
-      const participant = await participantRepository.findByUserId(userId);
+      const participant = await participantRepository.findByUserIdWithScores(userId);
       if (!participant) {
         throw new Error('Participant not found for this user');
       }

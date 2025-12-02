@@ -680,6 +680,27 @@ class ParticipantRepository {
       scoring: scores
     };
   }
+
+  /**
+   * Enhanced findByUserId that includes calculated scores
+   * @param {string} userId - User account ID
+   * @returns {Object} - Participant with scores if requested
+   */
+  async findByUserIdWithScores(userId) {
+    const participant = await this.findByUserId(userId);
+    
+    if (!participant) {
+      return null;
+    }
+
+    // Calculate scores for this participant
+    const scores = await this.getParticipantScores(participant.id);
+
+    return {
+      ...participant.toJSON(),
+      scoring: scores
+    };
+  }
 }
 
 module.exports = new ParticipantRepository();
