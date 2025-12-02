@@ -132,7 +132,13 @@ function calculateCategoryScore(categoryKey, errorCount, subType = 'default') {
         };
     }
     
-    const totalDeduction = calculateCategoryDeduction(categoryKey, errorCount, subType);
+    // Calculate raw deduction
+    const rawDeduction = calculateCategoryDeduction(categoryKey, errorCount, subType);
+    
+    // Cap deduction at initial score (can't deduct more than the initial value)
+    const totalDeduction = Math.min(rawDeduction, rule.initial);
+    
+    // Calculate final score (will be 0 if deduction >= initial)
     const finalScore = Math.max(0, rule.initial - totalDeduction);
     
     return {
@@ -140,7 +146,7 @@ function calculateCategoryScore(categoryKey, errorCount, subType = 'default') {
         initialScore: rule.initial,
         percentage: rule.percentage,
         errorCount: errorCount,
-        totalDeduction: totalDeduction,
+        totalDeduction: Number(totalDeduction.toFixed(2)),
         finalScore: Number(finalScore.toFixed(2))
     };
 }
