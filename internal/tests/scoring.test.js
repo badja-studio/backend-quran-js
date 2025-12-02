@@ -70,7 +70,7 @@ Object.values(scoreData.categoryScores).forEach(category => {
     console.log('');
 });
 
-console.log(`📈 Overall Average: ${scoreData.overallAverage}`);
+console.log(`📈 Overall Score: ${scoreData.overallScore}`);
 console.log(`📉 Total Deduction: ${scoreData.totalDeduction}`);
 
 // Test edge cases
@@ -79,7 +79,7 @@ console.log('======================');
 
 // Test with no assessments
 const noAssessmentData = calculateParticipantScores([]);
-console.log('No assessments - Overall Score:', noAssessmentData.overallAverage);
+console.log('No assessments - Overall Score:', noAssessmentData.overallScore);
 
 // Test with only good scores
 const goodAssessments = [
@@ -87,7 +87,7 @@ const goodAssessments = [
     { kategori: 'sifat', nilai: 100 }
 ];
 const goodScoreData = calculateParticipantScores(goodAssessments);
-console.log('All good assessments - Overall Score:', goodScoreData.overallAverage);
+console.log('All good assessments - Overall Score:', goodScoreData.overallScore);
 
 console.log('\n✨ Scoring system test completed!');
 

@@ -566,7 +566,7 @@ class ParticipantRepository {
         // Return default scores if no assessments found
         return formatScoresForAPI({
           categoryScores: {},
-          overallAverage: 100,
+          overallScore: 100,
           totalDeduction: 0,
           assessmentCount: 0,
           calculatedAt: new Date().toISOString()
@@ -612,7 +612,7 @@ class ParticipantRepository {
           // Default scores if no assessments
           scoresByParticipant[participantId] = formatScoresForAPI({
             categoryScores: {},
-            overallAverage: 100,
+            overallScore: 100,
             totalDeduction: 0,
             assessmentCount: 0,
             calculatedAt: new Date().toISOString()

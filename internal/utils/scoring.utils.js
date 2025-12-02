@@ -290,6 +290,9 @@ function calculateParticipantScores(assessments) {
 function formatScoresForAPI(scoreData) {
     const { categoryScores, overallScore, totalDeduction, assessmentCount } = scoreData;
     
+    // Default overall score is 100 (sum of all initial values) when no assessments
+    const defaultOverall = 55.5 + 14.5 + 8 + 13.5 + 6 + 2.5; // = 100
+    
     return {
         scores: {
             makhraj: categoryScores.MAKHRAJ?.finalScore || 55.5,
@@ -298,7 +301,7 @@ function formatScoresForAPI(scoreData) {
             mad: categoryScores.MAD?.finalScore || 13.5,
             gharib: categoryScores.GHARIB?.finalScore || 6,
             kelancaran: categoryScores.KELANCARAN?.finalScore || 2.5,
-            overall: overallScore
+            overall: overallScore || defaultOverall
         },
         details: {
             categoryBreakdown: categoryScores,
