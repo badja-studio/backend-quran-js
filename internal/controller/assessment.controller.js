@@ -86,7 +86,8 @@ class AssessmentController {
         search: req.query.search || '',
         sortBy: req.query.sortBy || 'createdAt',
         sortOrder: req.query.sortOrder || 'DESC',
-        filters: filters
+        filters: filters,
+        noPagination: true // Default to no pagination for participant assessments
       };
 
       const result = await assessmentUsecase.getAssessmentsByParticipant(participantId, options);

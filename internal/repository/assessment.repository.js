@@ -179,10 +179,11 @@ class AssessmentRepository {
       limit = 10,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
-      filters = []
+      filters = [],
+      noPagination = false
     } = options;
 
-    const offset = (page - 1) * limit;
+    const offset = noPagination ? 0 : (page - 1) * limit;
 
     // Map sortBy to actual field names
     const sortFieldMapping = {
@@ -243,7 +244,7 @@ class AssessmentRepository {
       });
     }
 
-    const { count, rows } = await Assessment.findAndCountAll({
+    const queryOptions = {
       where: filterConditions,
       include: [
         {
@@ -257,11 +258,24 @@ class AssessmentRepository {
           attributes: ['id', 'name', 'email']
         }
       ],
-      limit: parseInt(limit),
-      offset: offset,
       order: [[orderField, sortOrder.toUpperCase()]],
       distinct: true
-    });
+    };
+
+    if (!noPagination) {
+      queryOptions.limit = parseInt(limit);
+      queryOptions.offset = offset;
+    }
+
+    const { count, rows } = await Assessment.findAndCountAll(queryOptions);
+
+    if (noPagination) {
+      // Return all data without pagination
+      return {
+        data: rows,
+        total: count
+      };
+    }
 
     return {
       data: rows,

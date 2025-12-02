@@ -226,7 +226,7 @@
  * @swagger
  * /api/assessments/participant/{participantId}:
  *   get:
- *     summary: Get assessments by participant
+ *     summary: Get assessments by participant (returns all data without pagination)
  *     tags: [Assessments]
  *     security:
  *       - bearerAuth: []
@@ -236,11 +236,49 @@
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Participant ID
+ *       - name: sortBy
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, updatedAt, hasil_assessment, catatan, tanggal_assessment]
+ *           default: createdAt
+ *         description: Field to sort by
+ *       - name: sortOrder
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *           default: DESC
+ *         description: Sort order
+ *       - name: filters
+ *         in: query
+ *         schema:
+ *           type: string
+ *         description: JSON string of filters array
  *     responses:
  *       200:
- *         description: Success
+ *         description: All participant assessments retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Assessment'
+ *                 total:
+ *                   type: integer
+ *                   description: Total number of assessments
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: Participant not found
  */
 
 /**
