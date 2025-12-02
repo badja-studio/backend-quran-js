@@ -3,11 +3,13 @@ const router = express.Router();
 const assessorController = require('../controller/assessor.controller');
 const { authenticateToken } = require('../middleware/auth.middleware');
 
-// Apply authentication middleware to all routes
+// Public routes (no authentication required)
+router.get('/', (req, res) => assessorController.getAllAssessors(req, res));
+
+// Apply authentication middleware to protected routes
 router.use(authenticateToken);
 
-// GET routes
-router.get('/', (req, res) => assessorController.getAllAssessors(req, res));
+// Protected GET routes
 router.get('/profile', (req, res) => assessorController.getMyProfile(req, res));
 router.get('/participants', (req, res) => assessorController.getMyParticipants(req, res));
 router.get('/statistics', (req, res) => assessorController.getMyStatistics(req, res));

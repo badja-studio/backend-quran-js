@@ -98,10 +98,8 @@
  * @swagger
  * /api/assessors:
  *   get:
- *     summary: Get all assessors with pagination, filtering, and search
+ *     summary: Get all assessors with pagination, filtering, and search (Public endpoint)
  *     tags: [Assessors]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: page
