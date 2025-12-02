@@ -44,11 +44,11 @@ Sistem scoring untuk penilaian bacaan Al-Quran yang adil dan komprehensif. Siste
 - **Deduction per error**: 2.5 poin
 - **Maximum deduction**: 2.5 poin (capped)
 
-### 7. PENGURANGAN (Penalty) - Special Category
-- **Bobot**: Mengurangi dari total skor keseluruhan
-- **Deduction per error**: 100 poin (extreme penalty)
-- **Use case**: Tidak bisa membaca sama sekali
-- **Maximum deduction**: Terbatas per jumlah item
+### 7. PENGURANGAN (Penalty) - Special Category ⚠️
+- **ATURAN KHUSUS**: Mengoverride semua perhitungan lainnya
+- **Ketika ada error** (nilai > 0): Overall score = **10** (fixed)
+- **Ketika tidak ada error**: Normal scoring diterapkan
+- **Use case**: Tidak bisa membaca sama sekali = score otomatis 10
 
 ## Logika Scoring
 
@@ -195,6 +195,25 @@ finalScore = max(0, categoryInitialScore - cappedTotalDeduction)
   - Final = 55.5 - 55.5 = **0**
 
 Sistem memastikan pengurangan tidak melebihi nilai maksimal kategori, bahkan dengan nilai ekstrim.
+
+### Contoh 3: PENGURANGAN Override - Score Otomatis 10
+
+```json
+{
+  "assessments": [
+    {"huruf": "د", "kategori": "makhraj", "nilai": 0},
+    {"huruf": "خ", "kategori": "makhraj", "nilai": 0},
+    {"huruf": "Tidak Bisa Membaca", "kategori": "pengurangan", "nilai": 1}
+  ]
+}
+```
+
+**Result**: Overall Score = **10** (fixed) ⚠️
+
+Meskipun kategori lain perfect (nilai = 0), adanya error di PENGURANGAN membuat:
+- Overall score **dipaksa** menjadi 10
+- Penalty deduction = 90
+- Semua kategori mendapat 10% dari skor normalnya
 
 ## API Usage
 

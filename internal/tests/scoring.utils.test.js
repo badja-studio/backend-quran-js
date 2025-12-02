@@ -193,7 +193,7 @@ describe('Scoring Utils', () => {
     });
 
     describe('calculateParticipantScores - Penalty Category', () => {
-        test('should apply penalty from PENGURANGAN category to overall score', () => {
+        test('should set overall score to 10 when PENGURANGAN has errors', () => {
             const assessments = [
                 { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "د", kategori: "makhraj", nilai: 0 },
                 { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "خ", kategori: "makhraj", nilai: 0 },
@@ -202,20 +202,26 @@ describe('Scoring Utils', () => {
 
             const result = calculateParticipantScores(assessments);
             
-            // Base score from categories should be near 100
-            // But penalty should reduce overall
-            expect(result.penaltyDeduction).toBeGreaterThan(0);
-            expect(result.overallScore).toBeLessThan(100);
+            // When PENGURANGAN has errors, overall score should be fixed at 10
+            expect(result.overallScore).toBe(10);
+            expect(result.penaltyDeduction).toBe(90);
+            
+            // Categories should have proportionally reduced scores (10% of original)
+            expect(result.categoryScores.MAKHRAJ.finalScore).toBeCloseTo(5.55, 1); // 55.5 * 0.1
+            expect(result.categoryScores.SIFAT.finalScore).toBeCloseTo(1.45, 1); // 14.5 * 0.1
         });
 
-        test('should not reduce score below 0 with extreme penalties', () => {
+        test('should work with multiple PENGURANGAN errors (still score 10)', () => {
             const assessments = [
-                { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Tidak Bisa Membaca", kategori: "pengurangan", nilai: 10 },
+                { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Tidak Bisa Membaca", kategori: "pengurangan", nilai: 5 },
+                { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Tidak Bisa", kategori: "pengurangan", nilai: 3 },
             ];
 
             const result = calculateParticipantScores(assessments);
             
-            expect(result.overallScore).toBeGreaterThanOrEqual(0);
+            // Even with multiple/high PENGURANGAN errors, score is still fixed at 10
+            expect(result.overallScore).toBe(10);
+            expect(result.penaltyDeduction).toBe(90);
         });
     });
 
