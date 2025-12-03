@@ -136,6 +136,9 @@ class ParticipantUsecase {
       if (!participantData.nip) {
         participantData.nip = participantData.nik
       }
+      if (!participantData.no_akun) {
+        participantData.no_akun = `ACC-${Math.floor(Date.now() / 1000)}`;
+      }
       // Check if participant with same NIP already exists
       const existingParticipant = await participantRepository.findByNip(participantData.nip);
       if (existingParticipant) {
