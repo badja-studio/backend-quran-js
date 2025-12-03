@@ -50,12 +50,11 @@ class AdminUseCase {
       }
 
       // Create user first (username becomes password)
-      const hashedPassword = await bcrypt.hash(username, 10);
-      
+      // Password will be hashed by model hook beforeCreate
       const newUser = await User.create({
         username,
         email,
-        password: hashedPassword,
+        password: username, // Will be hashed by model hook
         role: 'admin',
         is_active: true,
       }, { transaction });

@@ -1,5 +1,4 @@
 const User = require('../models/user.model');
-const bcrypt = require('bcryptjs');
 
 class AuthRepository {
     /**
@@ -8,10 +7,7 @@ class AuthRepository {
      * @returns {Promise<User>}
      */
     async createUser(userData) {
-        // Hash password before creating user
-        if (userData.password) {
-            userData.password = await bcrypt.hash(userData.password, 10);
-        }
+        // Password will be hashed by model hook beforeCreate
         return await User.create(userData);
     }
 
