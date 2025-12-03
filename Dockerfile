@@ -12,14 +12,19 @@ RUN apk add --no-cache \
     && rm -rf /var/cache/apk/*
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
-    NODE_ENV=production
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
+# Copy deps files
 COPY package*.json ./
 
-RUN npm ci --only=production
+# INSTALL ALL dependencies (dev + prod)
+RUN npm install
 
+# Copy source code
 COPY . .
+
+# REMOVE devDependencies LATER
+RUN npm prune --production
 
 RUN chmod +x docker-entrypoint-prod.sh
 
