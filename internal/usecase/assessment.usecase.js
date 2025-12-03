@@ -170,16 +170,6 @@ class AssessmentUsecase {
           throw new Error(`Invalid asesor_id format at index ${i} (must be UUID)`);
         }
 
-        // Validate huruf
-        if (!validateHuruf(assessmentData.huruf)) {
-          throw new Error(`huruf must be A, B, C, D, or E at index ${i}`);
-        }
-        
-        // Validate nilai
-        if (!validateNilai(assessmentData.nilai)) {
-          throw new Error(`nilai must be between 0 and 100 at index ${i} (current: ${assessmentData.nilai})`);
-        }
-
         // Validate kategori
         if (!assessmentData.kategori || typeof assessmentData.kategori !== 'string') {
           throw new Error(`kategori must be a non-empty string at index ${i}`);
