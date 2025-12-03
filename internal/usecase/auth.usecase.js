@@ -18,13 +18,10 @@ class AuthUsecase {
         };
       }
 
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Create user
+      // Create user (password will be hashed by model hook)
       const user = await User.create({
         username,
-        password: hashedPassword,
+        password,
         role
       });
 
