@@ -188,7 +188,7 @@ class ParticipantRepository {
     };
   }
 
-  async findById(id) {
+  async findById(id, options = {}) {
     return await Participant.findByPk(id, {
       include: [
         {
@@ -201,11 +201,12 @@ class ParticipantRepository {
           as: 'akun',
           attributes: ['id', 'username']
         }
-      ]
+      ],
+      ...options
     });
   }
 
-  async findByUserId(userId) {
+  async findByUserId(userId, options = {}) {
     return await Participant.findOne({
       where: { akun_id: userId },
       include: [
@@ -214,11 +215,12 @@ class ParticipantRepository {
           as: 'assessor',
           attributes: ASSESSOR_ATTRIBUTES
         }
-      ]
+      ],
+      ...options
     });
   }
 
-  async findByNip(nip) {
+  async findByNip(nip, options = {}) {
     return await Participant.findOne({
       where: { nip: nip },
       include: [
@@ -227,7 +229,22 @@ class ParticipantRepository {
           as: 'akun',
           attributes: ['id', 'username', 'role']
         }
-      ]
+      ],
+      ...options
+    });
+  }
+
+  async findByEmail(email, options = {}) {
+    return await Participant.findOne({
+      where: { email: email },
+      ...options
+    });
+  }
+
+  async findByNoAkun(noAkun, options = {}) {
+    return await Participant.findOne({
+      where: { no_akun: noAkun },
+      ...options
     });
   }
 
@@ -515,30 +532,32 @@ class ParticipantRepository {
     return await Participant.create(participantData, options);
   }
 
-  async update(id, participantData) {
+  async update(id, participantData, options = {}) {
     const [updatedRowsCount] = await Participant.update(participantData, {
-      where: { id }
+      where: { id },
+      ...options
     });
     
     if (updatedRowsCount === 0) {
       return null;
     }
     
-    return await this.findById(id);
+    return await this.findById(id, options);
   }
 
-  async delete(id) {
+  async delete(id, options = {}) {
     return await Participant.destroy({
-      where: { id }
+      where: { id },
+      ...options
     });
   }
 
-  async assignAssessor(participantId, assessorId) {
-    return await this.update(participantId, { asesor_id: assessorId });
+  async assignAssessor(participantId, assessorId, options = {}) {
+    return await this.update(participantId, { asesor_id: assessorId }, options);
   }
 
-  async updateStatus(participantId, status) {
-    return await this.update(participantId, { status });
+  async updateStatus(participantId, status, options = {}) {
+    return await this.update(participantId, { status }, options);
   }
 
   async countByStatus() {

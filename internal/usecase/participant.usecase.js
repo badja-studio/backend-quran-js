@@ -3,6 +3,24 @@ const assessorRepository = require('../repository/assessor.repository');
 const authRepository = require('../repository/auth.repository');
 const { sequelize } = require('../../config/database');
 
+// Validation helpers
+const validateEmail = (email) => {
+  if (!email) return true;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePhone = (phone) => {
+  if (!phone) return true;
+  // Allow digits, spaces, dashes, plus sign, parentheses
+  const phoneRegex = /^[+]?[\d\s()-]{8,20}$/;
+  return phoneRegex.test(phone);
+};
+
+const validateGender = (gender) => {
+  return ['L', 'P'].includes(gender);
+};
+
 class ParticipantUsecase {
   async getAllParticipants(options) {
     try {
@@ -70,12 +88,25 @@ class ParticipantUsecase {
     const transaction = await sequelize.transaction();
     
     try {
-      // Validate required fields (removed akun_id since we'll create it)
+      // Validate required fields
       const requiredFields = ['no_akun', 'nip', 'nama', 'jenis_kelamin'];
       for (const field of requiredFields) {
         if (!participantData[field]) {
           throw new Error(`${field} is required`);
         }
+      }
+
+      // Validate data types
+      if (!validateGender(participantData.jenis_kelamin)) {
+        throw new Error('jenis_kelamin must be L (Laki-laki) or P (Perempuan)');
+      }
+
+      if (participantData.email && !validateEmail(participantData.email)) {
+        throw new Error('Invalid email format');
+      }
+
+      if (participantData.no_handphone && !validatePhone(participantData.no_handphone)) {
+        throw new Error('Invalid phone number format');
       }
 
       // Check if participant with same NIP already exists
@@ -84,18 +115,27 @@ class ParticipantUsecase {
         throw new Error('Participant with this NIP already exists');
       }
 
-      // Create user account first with NIP as username and password
+      // Check if no_akun already exists
+      const existingNoAkun = await participantRepository.findByNoAkun(participantData.no_akun);
+      if (existingNoAkun) {
+        throw new Error('Participant with this no_akun already exists');
+      }
+
+      // Create user account with transaction
       const userData = {
         username: participantData.nip,
-        password: participantData.nip, // Password same as NIP
+        password: participantData.password || participantData.nip, // Use provided password or NIP as default
         role: 'participant'
       };
 
-      const user = await authRepository.createUser(userData);
+      const user = await authRepository.createUserWithTransaction(userData, transaction);
+
+      // Remove password from participant data if present
+      const { password, ...participantDataClean } = participantData;
 
       // Create participant with the user account ID
       const participant = await participantRepository.create({
-        ...participantData,
+        ...participantDataClean,
         akun_id: user.id,
         status: 'BELUM'
       }, { transaction });
@@ -112,7 +152,7 @@ class ParticipantUsecase {
         },
         loginCredentials: {
           username: userData.username,
-          password: participantData.nip // Return original password for first-time login info
+          password: userData.password
         }
       };
     } catch (error) {
@@ -126,33 +166,60 @@ class ParticipantUsecase {
     
     try {
       // Validate required fields including password
-      const requiredFields = ['nama', 'jenis_kelamin','email','no_handphone', 'password'];
+      const requiredFields = ['nama', 'jenis_kelamin', 'email', 'no_handphone', 'password'];
       for (const field of requiredFields) {
         if (!participantData[field]) {
           throw new Error(`${field} is required`);
         }
       }
 
+      // Validate data types
+      if (!validateGender(participantData.jenis_kelamin)) {
+        throw new Error('jenis_kelamin must be L (Laki-laki) or P (Perempuan)');
+      }
+
+      if (!validateEmail(participantData.email)) {
+        throw new Error('Invalid email format');
+      }
+
+      if (!validatePhone(participantData.no_handphone)) {
+        throw new Error('Invalid phone number format');
+      }
+
+      if (participantData.password.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
+
+      // Generate NIP and no_akun if not provided
+      const timestamp = Math.floor(Date.now() / 1000);
       if (!participantData.nip) {
-        participantData.nip = participantData.nik
+        participantData.nip = `NIP-${timestamp}`;
       }
+
       if (!participantData.no_akun) {
-        participantData.no_akun = `ACC-${Math.floor(Date.now() / 1000)}`;
+        participantData.no_akun = `ACC-${timestamp}`;
       }
+
       // Check if participant with same NIP already exists
       const existingParticipant = await participantRepository.findByNip(participantData.nip);
       if (existingParticipant) {
         throw new Error('Participant with this NIP already exists');
       }
 
-      // Create user account first with email as username and provided password
+      // Check if email already used by another participant
+      const existingEmail = await participantRepository.findByEmail(participantData.email);
+      if (existingEmail) {
+        throw new Error('Email already registered');
+      }
+
+      // Create user account with transaction
       const userData = {
         username: participantData.email,
-        password: participantData.password, // Use provided password
+        password: participantData.password,
         role: 'participant'
       };
 
-      const user = await authRepository.createUser(userData);
+      const user = await authRepository.createUserWithTransaction(userData, transaction);
 
       // Separate participant data from password
       const { password, ...participantDataWithoutPassword } = participantData;

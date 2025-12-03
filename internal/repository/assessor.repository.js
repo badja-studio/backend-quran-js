@@ -186,7 +186,7 @@ class AssessorRepository {
     });
   }
 
-  async findByUsername(username) {
+  async findByUsername(username, options = {}) {
     return await Assessor.findOne({
       where: { username: username },
       include: [
@@ -195,7 +195,15 @@ class AssessorRepository {
           as: 'akun',
           attributes: ['id', 'username', 'role']
         }
-      ]
+      ],
+      ...options
+    });
+  }
+
+  async findByEmail(email, options = {}) {
+    return await Assessor.findOne({
+      where: { email: email },
+      ...options
     });
   }
 
@@ -349,26 +357,29 @@ class AssessorRepository {
     });
   }
 
-  async updateParticipantCounts(assessorId) {
+  async updateParticipantCounts(assessorId, options = {}) {
     const belumCount = await Participant.count({
       where: { 
         asesor_id: assessorId,
         status: 'BELUM'
-      }
+      },
+      ...options
     });
 
     const sudahCount = await Participant.count({
       where: { 
         asesor_id: assessorId,
         status: 'SUDAH'
-      }
+      },
+      ...options
     });
 
     await Assessor.update({
       total_peserta_belum_asesmen: belumCount,
       total_peserta_selesai_asesmen: sudahCount
     }, {
-      where: { id: assessorId }
+      where: { id: assessorId },
+      ...options
     });
 
     return { belumCount, sudahCount };

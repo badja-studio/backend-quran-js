@@ -1,6 +1,25 @@
 const assessmentRepository = require('../repository/assessment.repository');
 const participantRepository = require('../repository/participant.repository');
 const assessorRepository = require('../repository/assessor.repository');
+const { sequelize } = require('../../config/database');
+
+// Validation helpers
+const validateNilai = (nilai) => {
+  const num = parseFloat(nilai);
+  return !isNaN(num) && num >= 0 && num <= 100;
+};
+
+const validateHuruf = (huruf) => {
+  if (!huruf || typeof huruf !== 'string') return false;
+  const validHuruf = ['A', 'B', 'C', 'D', 'E'];
+  return validHuruf.includes(huruf.toUpperCase());
+};
+
+const isValidUUID = (str) => {
+  if (typeof str !== 'string') return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
 
 class AssessmentUsecase {
   async getAllAssessments(options) {
@@ -52,6 +71,8 @@ class AssessmentUsecase {
   }
 
   async createAssessment(assessmentData) {
+    const transaction = await sequelize.transaction();
+    
     try {
       // Validate required fields
       const requiredFields = ['peserta_id', 'asesor_id', 'huruf', 'nilai', 'kategori'];
@@ -61,10 +82,28 @@ class AssessmentUsecase {
         }
       }
 
-      // Validate nilai: must be >= 0 (boleh 0, tidak boleh minus)
-      const nilai = parseFloat(assessmentData.nilai);
-      if (isNaN(nilai) || nilai < 0) {
-        throw new Error(`nilai must be a number >= 0 (current: ${assessmentData.nilai})`);
+      // Validate UUID fields
+      if (!isValidUUID(assessmentData.peserta_id)) {
+        throw new Error('Invalid peserta_id format (must be UUID)');
+      }
+
+      if (!isValidUUID(assessmentData.asesor_id)) {
+        throw new Error('Invalid asesor_id format (must be UUID)');
+      }
+
+      // Validate huruf
+      if (!validateHuruf(assessmentData.huruf)) {
+        throw new Error('huruf must be A, B, C, D, or E');
+      }
+
+      // Validate nilai: must be >= 0 and <= 100
+      if (!validateNilai(assessmentData.nilai)) {
+        throw new Error(`nilai must be a number between 0 and 100 (current: ${assessmentData.nilai})`);
+      }
+
+      // Validate kategori
+      if (!assessmentData.kategori || typeof assessmentData.kategori !== 'string') {
+        throw new Error('kategori must be a non-empty string');
       }
 
       // Check if participant exists
@@ -84,22 +123,28 @@ class AssessmentUsecase {
         throw new Error('Participant is not assigned to this assessor');
       }
 
-      const assessment = await assessmentRepository.create(assessmentData);
+      // Create assessment with transaction
+      const assessment = await assessmentRepository.create(assessmentData, { transaction });
       
       // Update participant status to SUDAH after first assessment
       if (participant.status === 'BELUM') {
-        await participantRepository.updateStatus(assessmentData.peserta_id, 'SUDAH');
+        await participantRepository.updateStatus(assessmentData.peserta_id, 'SUDAH', { transaction });
         // Update assessor participant counts
-        await assessorRepository.updateParticipantCounts(assessmentData.asesor_id);
+        await assessorRepository.updateParticipantCounts(assessmentData.asesor_id, { transaction });
       }
+
+      await transaction.commit();
 
       return assessment;
     } catch (error) {
+      await transaction.rollback();
       throw new Error(`Failed to create assessment: ${error.message}`);
     }
   }
 
   async createBulkAssessments(assessmentsData) {
+    const transaction = await sequelize.transaction();
+    
     try {
       if (!Array.isArray(assessmentsData) || assessmentsData.length === 0) {
         throw new Error('Assessments data must be a non-empty array');
@@ -107,17 +152,37 @@ class AssessmentUsecase {
 
       // Validate all assessments
       const requiredFields = ['peserta_id', 'asesor_id', 'huruf', 'nilai', 'kategori'];
-      for (const assessmentData of assessmentsData) {
+      for (let i = 0; i < assessmentsData.length; i++) {
+        const assessmentData = assessmentsData[i];
+        
         for (const field of requiredFields) {
           if (assessmentData[field] === undefined || assessmentData[field] === null) {
-            throw new Error(`${field} is required in all assessments`);
+            throw new Error(`${field} is required in assessment at index ${i}`);
           }
         }
         
-        // Validate nilai: must be >= 0 (boleh 0, tidak boleh minus)
-        const nilai = parseFloat(assessmentData.nilai);
-        if (isNaN(nilai) || nilai < 0) {
-          throw new Error(`nilai must be a number >= 0 (current: ${assessmentData.nilai})`);
+        // Validate UUID fields
+        if (!isValidUUID(assessmentData.peserta_id)) {
+          throw new Error(`Invalid peserta_id format at index ${i} (must be UUID)`);
+        }
+
+        if (!isValidUUID(assessmentData.asesor_id)) {
+          throw new Error(`Invalid asesor_id format at index ${i} (must be UUID)`);
+        }
+
+        // Validate huruf
+        if (!validateHuruf(assessmentData.huruf)) {
+          throw new Error(`huruf must be A, B, C, D, or E at index ${i}`);
+        }
+        
+        // Validate nilai
+        if (!validateNilai(assessmentData.nilai)) {
+          throw new Error(`nilai must be between 0 and 100 at index ${i} (current: ${assessmentData.nilai})`);
+        }
+
+        // Validate kategori
+        if (!assessmentData.kategori || typeof assessmentData.kategori !== 'string') {
+          throw new Error(`kategori must be a non-empty string at index ${i}`);
         }
       }
 
@@ -125,12 +190,14 @@ class AssessmentUsecase {
       const participantIds = [...new Set(assessmentsData.map(a => a.peserta_id))];
       const assessorIds = [...new Set(assessmentsData.map(a => a.asesor_id))];
 
-      // Validate participants exist
+      // Validate participants exist and cache them
+      const participantCache = {};
       for (const participantId of participantIds) {
         const participant = await participantRepository.findById(participantId);
         if (!participant) {
           throw new Error(`Participant with ID ${participantId} not found`);
         }
+        participantCache[participantId] = participant;
       }
 
       // Validate assessors exist
@@ -143,32 +210,33 @@ class AssessmentUsecase {
 
       // Validate participant-assessor assignments
       for (const assessmentData of assessmentsData) {
-        const participant = await participantRepository.findById(assessmentData.peserta_id);
+        const participant = participantCache[assessmentData.peserta_id];
         if (participant.asesor_id !== assessmentData.asesor_id) {
           throw new Error(`Participant ${assessmentData.peserta_id} is not assigned to assessor ${assessmentData.asesor_id}`);
         }
       }
 
-      const assessments = await assessmentRepository.bulkCreate(assessmentsData);
+      // Create assessments with transaction
+      const assessments = await assessmentRepository.bulkCreate(assessmentsData, { transaction });
 
       // Update participant statuses to SUDAH for first-time assessments
-      const updatePromises = [];
       for (const participantId of participantIds) {
-        const participant = await participantRepository.findById(participantId);
+        const participant = participantCache[participantId];
         if (participant.status === 'BELUM') {
-          updatePromises.push(participantRepository.updateStatus(participantId, 'SUDAH'));
+          await participantRepository.updateStatus(participantId, 'SUDAH', { transaction });
         }
       }
-      await Promise.all(updatePromises);
 
       // Update assessor participant counts
-      const countUpdatePromises = assessorIds.map(assessorId => 
-        assessorRepository.updateParticipantCounts(assessorId)
-      );
-      await Promise.all(countUpdatePromises);
+      for (const assessorId of assessorIds) {
+        await assessorRepository.updateParticipantCounts(assessorId, { transaction });
+      }
+
+      await transaction.commit();
 
       return assessments;
     } catch (error) {
+      await transaction.rollback();
       throw new Error(`Failed to create bulk assessments: ${error.message}`);
     }
   }

@@ -408,31 +408,34 @@ class AssessmentRepository {
     };
   }
 
-  async create(assessmentData) {
-    return await Assessment.create(assessmentData);
+  async create(assessmentData, options = {}) {
+    return await Assessment.create(assessmentData, options);
   }
 
-  async bulkCreate(assessmentsData) {
+  async bulkCreate(assessmentsData, options = {}) {
     return await Assessment.bulkCreate(assessmentsData, {
-      returning: true
+      returning: true,
+      ...options
     });
   }
 
-  async update(id, assessmentData) {
+  async update(id, assessmentData, options = {}) {
     const [updatedRowsCount] = await Assessment.update(assessmentData, {
-      where: { id }
+      where: { id },
+      ...options
     });
     
     if (updatedRowsCount === 0) {
       return null;
     }
     
-    return await this.findById(id);
+    return await this.findById(id, options);
   }
 
-  async delete(id) {
+  async delete(id, options = {}) {
     return await Assessment.destroy({
-      where: { id }
+      where: { id },
+      ...options
     });
   }
 

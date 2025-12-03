@@ -3,6 +3,19 @@ const participantRepository = require('../repository/participant.repository');
 const authRepository = require('../repository/auth.repository');
 const { sequelize } = require('../../config/database');
 
+// Validation helpers
+const validateEmail = (email) => {
+  if (!email) return true;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePhone = (phone) => {
+  if (!phone) return true;
+  const phoneRegex = /^[+]?[\d\s()-]{8,20}$/;
+  return phoneRegex.test(phone);
+};
+
 class AssessorUsecase {
   async getAllAssessors(options) {
     try {
@@ -68,12 +81,21 @@ class AssessorUsecase {
     const transaction = await sequelize.transaction();
     
     try {
-      // Validate required fields (removed akun_id since we'll create it)
+      // Validate required fields
       const requiredFields = ['name', 'username', 'email'];
       for (const field of requiredFields) {
         if (!assessorData[field]) {
           throw new Error(`${field} is required`);
         }
+      }
+
+      // Validate data types
+      if (!validateEmail(assessorData.email)) {
+        throw new Error('Invalid email format');
+      }
+
+      if (assessorData.no_telepon && !validatePhone(assessorData.no_telepon)) {
+        throw new Error('Invalid phone number format');
       }
 
       // Check if assessor with same username already exists
@@ -82,18 +104,27 @@ class AssessorUsecase {
         throw new Error('Assessor with this username already exists');
       }
 
-      // Create user account first with username as both username and password
+      // Check if assessor with same email already exists
+      const existingEmail = await assessorRepository.findByEmail(assessorData.email);
+      if (existingEmail) {
+        throw new Error('Assessor with this email already exists');
+      }
+
+      // Create user account with transaction
       const userData = {
         username: assessorData.username,
-        password: assessorData.username, // Password same as username
+        password: assessorData.password || assessorData.username, // Use provided password or username as default
         role: 'assessor'
       };
 
-      const user = await authRepository.createUser(userData);
+      const user = await authRepository.createUserWithTransaction(userData, transaction);
+
+      // Remove password from assessor data if present
+      const { password, ...assessorDataClean } = assessorData;
 
       // Create assessor with the user account ID
       const assessor = await assessorRepository.create({
-        ...assessorData,
+        ...assessorDataClean,
         akun_id: user.id,
         total_peserta_belum_asesmen: 0,
         total_peserta_selesai_asesmen: 0
@@ -111,7 +142,7 @@ class AssessorUsecase {
         },
         loginCredentials: {
           username: userData.username,
-          password: assessorData.username // Return original password for first-time login info
+          password: userData.password
         }
       };
     } catch (error) {
