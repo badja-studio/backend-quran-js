@@ -89,7 +89,7 @@ const Participant = sequelize.define('Participant', {
         comment: 'Kode Pos'
     },
     status_pegawai: {
-        type: DataTypes.ENUM('PNS', 'PPPK', 'HONORER', 'KONTRAK'),
+        type: DataTypes.ENUM('PNS', 'PPPK', 'HONORER', 'KONTRAK', 'Non PNS'),
         allowNull: true,
         comment: 'Status Kepegawaian'
     },
