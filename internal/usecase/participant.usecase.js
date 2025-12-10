@@ -334,6 +334,49 @@ class ParticipantUsecase {
     }
   }
 
+  async updateAssessorAndSchedule(participantId, data) {
+    try {
+      const participant = await participantRepository.findById(participantId);
+      if (!participant) {
+        throw new Error('Participant not found');
+      }
+
+      // Validate assessor if provided
+      if (data.asesor_id) {
+        const assessor = await assessorRepository.findById(data.asesor_id);
+        if (!assessor) {
+          throw new Error('Assessor not found');
+        }
+      }
+
+      const oldAssessorId = participant.asesor_id;
+
+      // Update only assessor and schedule
+      const updatedParticipant = await participantRepository.updateAssessorAndSchedule(participantId, {
+        asesor_id: data.asesor_id,
+        jadwal: data.jadwal
+      });
+
+      if (!updatedParticipant) {
+        throw new Error('Failed to update participant');
+      }
+
+      // Update assessor participant counts if assessor changed
+      if (oldAssessorId !== data.asesor_id) {
+        if (oldAssessorId) {
+          await assessorRepository.updateParticipantCounts(oldAssessorId);
+        }
+        if (data.asesor_id) {
+          await assessorRepository.updateParticipantCounts(data.asesor_id);
+        }
+      }
+
+      return updatedParticipant;
+    } catch (error) {
+      throw new Error(`Failed to update assessor and schedule: ${error.message}`);
+    }
+  }
+
   async getParticipantStatistics() {
     try {
       return await participantRepository.countByStatus();

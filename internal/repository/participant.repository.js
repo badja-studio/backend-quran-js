@@ -560,6 +560,17 @@ class ParticipantRepository {
     return await this.update(participantId, { status }, options);
   }
 
+  async updateAssessorAndSchedule(participantId, data, options = {}) {
+    const updateData = {};
+    if (data.asesor_id !== undefined) {
+      updateData.asesor_id = data.asesor_id;
+    }
+    if (data.jadwal !== undefined) {
+      updateData.jadwal = data.jadwal;
+    }
+    return await this.update(participantId, updateData, options);
+  }
+
   async countByStatus() {
     const results = await Participant.findAll({
       attributes: [

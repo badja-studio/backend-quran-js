@@ -25,6 +25,7 @@ router.post('/', (req, res) => participantController.createParticipant(req, res)
 // PUT routes
 router.put('/:id', (req, res) => participantController.updateParticipant(req, res));
 router.put('/:id/assign-assessor', (req, res) => participantController.assignAssessor(req, res));
+router.put('/:id/assessor-schedule', (req, res) => participantController.updateAssessorAndSchedule(req, res));
 router.put('/:id/status', (req, res) => participantController.updateStatus(req, res));
 
 // DELETE routes

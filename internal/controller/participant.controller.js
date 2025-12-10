@@ -336,6 +336,30 @@ class ParticipantController {
     }
   }
 
+  async updateAssessorAndSchedule(req, res) {
+    try {
+      const { id } = req.params;
+      const { asesor_id, jadwal } = req.body;
+
+      const participant = await participantUsecase.updateAssessorAndSchedule(id, {
+        asesor_id,
+        jadwal
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Participant assessor and schedule updated successfully',
+        data: participant
+      });
+    } catch (error) {
+      const statusCode = error.message.includes('not found') ? 404 : 500;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
   async getStatistics(req, res) {
     try {
       const statistics = await participantUsecase.getParticipantStatistics();
