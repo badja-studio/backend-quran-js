@@ -2,20 +2,28 @@ const express = require('express');
 const router = express.Router();
 const assessorController = require('../controller/assessor.controller');
 const { authenticateToken } = require('../middleware/auth.middleware');
+const { cacheMiddleware } = require('../middleware/cache.middleware');
+const config = require('../../config/config');
+
+// Cache middleware for assessor data (1 minute TTL)
+const assessorCache = cacheMiddleware({ ttl: config.cache.defaultTTL });
+const assessorCacheUserSpecific = cacheMiddleware({ ttl: config.cache.defaultTTL, userSpecific: true });
 
 // Public routes (no authentication required)
-router.get('/', (req, res) => assessorController.getAllAssessors(req, res));
+router.get('/', assessorCache, (req, res) => assessorController.getAllAssessors(req, res));
 
 // Apply authentication middleware to protected routes
 router.use(authenticateToken);
 
-// Protected GET routes
-router.get('/profile', (req, res) => assessorController.getMyProfile(req, res));
-router.get('/participants', (req, res) => assessorController.getMyParticipants(req, res));
-router.get('/statistics', (req, res) => assessorController.getMyStatistics(req, res));
-router.get('/:id', (req, res) => assessorController.getAssessorById(req, res));
-router.get('/:id/participants', (req, res) => assessorController.getAssessorParticipants(req, res));
-router.get('/:id/statistics', (req, res) => assessorController.getAssessorStatistics(req, res));
+// Protected GET routes (user-specific cache)
+router.get('/profile', assessorCacheUserSpecific, (req, res) => assessorController.getMyProfile(req, res));
+router.get('/participants', assessorCacheUserSpecific, (req, res) => assessorController.getMyParticipants(req, res));
+router.get('/statistics', assessorCacheUserSpecific, (req, res) => assessorController.getMyStatistics(req, res));
+
+// Protected GET routes (regular cache)
+router.get('/:id', assessorCache, (req, res) => assessorController.getAssessorById(req, res));
+router.get('/:id/participants', assessorCache, (req, res) => assessorController.getAssessorParticipants(req, res));
+router.get('/:id/statistics', assessorCache, (req, res) => assessorController.getAssessorStatistics(req, res));
 
 // POST routes
 router.post('/', (req, res) => assessorController.createAssessor(req, res));
