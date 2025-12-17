@@ -1,26 +1,47 @@
+// RATE LIMITER DISABLED - For testing/development purposes
+// To re-enable, uncomment the code below and comment out the no-op functions
+
+// const rateLimit = require('express-rate-limit');
+
+// No-op middleware that does nothing (rate limiting disabled)
+const noOpLimiter = (_req, _res, next) => next();
+
+// General rate limiter untuk semua request - DISABLED
+const generalLimiter = noOpLimiter;
+
+// Rate limiter khusus untuk auth endpoints (lebih ketat) - DISABLED
+const authLimiter = noOpLimiter;
+
+// Rate limiter untuk API endpoints (moderate) - DISABLED
+const apiLimiter = noOpLimiter;
+
+// Rate limiter untuk master data (lebih longgar karena sering diakses frontend) - DISABLED
+const masterDataLimiter = noOpLimiter;
+
+/*
+// === ORIGINAL RATE LIMITER CODE (COMMENTED OUT) ===
+// Uncomment this section to re-enable rate limiting
+
 const rateLimit = require('express-rate-limit');
 
-// General rate limiter untuk semua request
 const generalLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes default
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.',
     retryAfter: Math.ceil((parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000) / 1000)
   },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting untuk health check
     return req.path === '/api/health';
   }
 });
 
-// Rate limiter khusus untuk auth endpoints (lebih ketat)
 const authLimiter = rateLimit({
-  windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes default
-  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS) || 10, // limit each IP to 10 login attempts per windowMs
+  windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS) || 10,
   message: {
     success: false,
     message: 'Too many authentication attempts from this IP, please try again later.',
@@ -28,13 +49,12 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true, // Don't count successful requests
+  skipSuccessfulRequests: true,
 });
 
-// Rate limiter untuk API endpoints (moderate)
 const apiLimiter = rateLimit({
-  windowMs: parseInt(process.env.API_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes default
-  max: parseInt(process.env.API_RATE_LIMIT_MAX_REQUESTS) || 200, // limit each IP to 200 API requests per windowMs
+  windowMs: parseInt(process.env.API_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.API_RATE_LIMIT_MAX_REQUESTS) || 200,
   message: {
     success: false,
     message: 'Too many API requests from this IP, please try again later.',
@@ -44,10 +64,9 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Rate limiter untuk master data (lebih longgar karena sering diakses frontend)
 const masterDataLimiter = rateLimit({
-  windowMs: parseInt(process.env.MASTER_DATA_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes default
-  max: parseInt(process.env.MASTER_DATA_RATE_LIMIT_MAX_REQUESTS) || 500, // limit each IP to 500 master data requests per windowMs
+  windowMs: parseInt(process.env.MASTER_DATA_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.MASTER_DATA_RATE_LIMIT_MAX_REQUESTS) || 500,
   message: {
     success: false,
     message: 'Too many master data requests from this IP, please try again later.',
@@ -56,6 +75,7 @@ const masterDataLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+*/
 
 module.exports = {
   generalLimiter,

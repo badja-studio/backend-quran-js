@@ -11,10 +11,11 @@ module.exports = {
     password: process.env.DB_PASSWORD || 'quran_password',
     dialect: 'postgres',
     pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
+      max: parseInt(process.env.DB_POOL_MAX) || 30,        // Increased for 200K+ scale
+      min: parseInt(process.env.DB_POOL_MIN) || 5,
+      acquire: parseInt(process.env.DB_POOL_ACQUIRE) || 60000,  // 60s timeout
+      idle: parseInt(process.env.DB_POOL_IDLE) || 10000,
+      evict: parseInt(process.env.DB_POOL_EVICT) || 1000   // Check for idle connections every 1s
     },
     logging: process.env.NODE_ENV === 'development' ? console.log : false
   },
