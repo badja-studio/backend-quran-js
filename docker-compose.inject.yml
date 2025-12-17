@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Backend Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quran-backend-prod
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3015}:3015"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3015}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      API_TITLE: ${API_TITLE:-Quran API}
+      API_VERSION: ${API_VERSION:-1.0.0}
+      API_DESCRIPTION: ${API_DESCRIPTION:-API for Quran management system}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-this-in-production}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-1d}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30m}
+      # Rate Limiting Configuration (Production - Stricter)
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}  # 15 minutes
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}  # 100 requests per 15 minutes per IP
+      AUTH_RATE_LIMIT_WINDOW_MS: ${AUTH_RATE_LIMIT_WINDOW_MS:-900000}  # 15 minutes
+      AUTH_RATE_LIMIT_MAX_REQUESTS: ${AUTH_RATE_LIMIT_MAX_REQUESTS:-5}   # 5 auth attempts per 15 minutes per IP
+      API_RATE_LIMIT_WINDOW_MS: ${API_RATE_LIMIT_WINDOW_MS:-900000}   # 15 minutes
+      API_RATE_LIMIT_MAX_REQUESTS: ${API_RATE_LIMIT_MAX_REQUESTS:-200}   # 200 API requests per 15 minutes per IP
+      MASTER_DATA_RATE_LIMIT_WINDOW_MS: ${MASTER_DATA_RATE_LIMIT_WINDOW_MS:-900000}  # 15 minutes
+      MASTER_DATA_RATE_LIMIT_MAX_REQUESTS: ${MASTER_DATA_RATE_LIMIT_MAX_REQUESTS:-300} # 300 master data requests per 15 minutes per IP
+      # Puppeteer configuration for PDF export
+      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
+      PUPPETEER_EXECUTABLE_PATH: '/usr/bin/chromium-browser'
+    networks:
+      - quran-network
+
+networks:
+  quran-network:
+    driver: bridge
