@@ -33,8 +33,28 @@ module.exports = {
   cors: {
     // Parse allowed origins from environment variable (comma-separated)
     // Example: CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
-    allowedOrigins: process.env.CORS_ALLOWED_ORIGINS 
+    allowedOrigins: process.env.CORS_ALLOWED_ORIGINS
       ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
       : ['*'] // Default to allow all
+  },
+  redis: {
+    host: process.env.REDIS_HOST || 'redis',
+    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    password: process.env.REDIS_PASSWORD || undefined,
+    db: parseInt(process.env.REDIS_DB, 10) || 0,
+    maxRetries: parseInt(process.env.REDIS_MAX_RETRIES, 10) || 10,
+    retryDelay: parseInt(process.env.REDIS_RETRY_DELAY, 10) || 3000,
+    connectTimeout: parseInt(process.env.REDIS_CONNECT_TIMEOUT, 10) || 10000
+  },
+  cache: {
+    enabled: process.env.CACHE_ENABLED === 'true',
+    defaultTTL: parseInt(process.env.CACHE_DEFAULT_TTL, 10) || 60,
+    masterDataTTL: parseInt(process.env.CACHE_MASTER_DATA_TTL, 10) || 300,
+    dashboardTTL: parseInt(process.env.CACHE_DASHBOARD_TTL, 10) || 7200
+  },
+  worker: {
+    dashboardRefreshCron: process.env.WORKER_DASHBOARD_REFRESH_CRON || '0 */2 * * *',
+    exportConcurrency: parseInt(process.env.WORKER_EXPORT_CONCURRENCY, 10) || 2,
+    exportTimeout: parseInt(process.env.WORKER_EXPORT_TIMEOUT, 10) || 300000
   }
 };

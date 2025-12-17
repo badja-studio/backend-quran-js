@@ -1,7 +1,12 @@
 const express = require('express');
 const masterController = require('../controller/master.controller');
+const { cacheMiddleware } = require('../middleware/cache.middleware');
+const config = require('../../config/config');
 
 const router = express.Router();
+
+// Cache middleware for master data (5 minutes TTL)
+const masterDataCache = cacheMiddleware({ ttl: config.cache.masterDataTTL });
 
 /**
  * @swagger
@@ -42,7 +47,7 @@ const router = express.Router();
  *                       nama:
  *                         type: string
  */
-router.get('/provinces', masterController.getProvinces);
+router.get('/provinces', masterDataCache, masterController.getProvinces);
 
 /**
  * @swagger
@@ -62,7 +67,7 @@ router.get('/provinces', masterController.getProvinces);
  *       404:
  *         description: Province not found
  */
-router.get('/provinces/:id', masterController.getProvinceById);
+router.get('/provinces/:id', masterDataCache, masterController.getProvinceById);
 
 /**
  * @swagger
@@ -81,7 +86,7 @@ router.get('/provinces/:id', masterController.getProvinceById);
  *       200:
  *         description: Cities retrieved successfully
  */
-router.get('/cities', masterController.getCities);
+router.get('/cities', masterDataCache, masterController.getCities);
 
 /**
  * @swagger
@@ -101,7 +106,7 @@ router.get('/cities', masterController.getCities);
  *       404:
  *         description: City not found
  */
-router.get('/cities/:id', masterController.getCityById);
+router.get('/cities/:id', masterDataCache, masterController.getCityById);
 
 /**
  * @swagger
@@ -120,7 +125,7 @@ router.get('/cities/:id', masterController.getCityById);
  *       200:
  *         description: Districts retrieved successfully
  */
-router.get('/districts', masterController.getDistricts);
+router.get('/districts', masterDataCache, masterController.getDistricts);
 
 /**
  * @swagger
@@ -140,7 +145,7 @@ router.get('/districts', masterController.getDistricts);
  *       404:
  *         description: District not found
  */
-router.get('/districts/:id', masterController.getDistrictById);
+router.get('/districts/:id', masterDataCache, masterController.getDistrictById);
 
 /**
  * @swagger
@@ -159,7 +164,7 @@ router.get('/districts/:id', masterController.getDistrictById);
  *       200:
  *         description: Villages retrieved successfully
  */
-router.get('/villages', masterController.getVillages);
+router.get('/villages', masterDataCache, masterController.getVillages);
 
 /**
  * @swagger
@@ -179,7 +184,7 @@ router.get('/villages', masterController.getVillages);
  *       404:
  *         description: Village not found
  */
-router.get('/villages/:id', masterController.getVillageById);
+router.get('/villages/:id', masterDataCache, masterController.getVillageById);
 
 // Specific routes for getting child data by parent ID
 /**
@@ -201,7 +206,7 @@ router.get('/villages/:id', masterController.getVillageById);
  *       500:
  *         description: Server error
  */
-router.get('/provinces/:provinceId/cities', masterController.getCitiesByProvinceId);
+router.get('/provinces/:provinceId/cities', masterDataCache, masterController.getCitiesByProvinceId);
 
 /**
  * @swagger
@@ -222,7 +227,7 @@ router.get('/provinces/:provinceId/cities', masterController.getCitiesByProvince
  *       500:
  *         description: Server error
  */
-router.get('/cities/:cityId/districts', masterController.getDistrictsByCityId);
+router.get('/cities/:cityId/districts', masterDataCache, masterController.getDistrictsByCityId);
 
 /**
  * @swagger
@@ -243,6 +248,6 @@ router.get('/cities/:cityId/districts', masterController.getDistrictsByCityId);
  *       500:
  *         description: Server error
  */
-router.get('/districts/:districtId/villages', masterController.getVillagesByDistrictId);
+router.get('/districts/:districtId/villages', masterDataCache, masterController.getVillagesByDistrictId);
 
 module.exports = router;

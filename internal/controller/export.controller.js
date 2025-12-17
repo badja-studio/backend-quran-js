@@ -1,22 +1,31 @@
-const exportUseCase = require('../usecase/export.usecase');
+const exportQueue = require('../queues/export.queue');
 
 class ExportController {
     // Export participants to Excel
     async exportParticipantsExcel(req, res) {
         try {
             const filters = req.query;
-            const workbook = await exportUseCase.generateParticipantsExcel(filters);
+            const userId = req.user?.id || 'anonymous';
 
-            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.setHeader('Content-Disposition', `attachment; filename=data-peserta-${new Date().toISOString().split('T')[0]}.xlsx`);
+            const job = await exportQueue.addExportJob({
+                entity: 'participants',
+                format: 'excel',
+                filters,
+                userId,
+                endpoint: 'participants-excel'
+            });
 
-            await workbook.xlsx.write(res);
-            res.end();
+            res.status(202).json({
+                success: true,
+                message: 'Export job queued successfully',
+                jobId: job.id,
+                statusUrl: `/api/export/status/${job.id}`
+            });
         } catch (error) {
             console.error('Error in exportParticipantsExcel:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || 'Failed to export participants to Excel'
+                message: error.message || 'Failed to queue export job'
             });
         }
     }
@@ -25,19 +34,27 @@ class ExportController {
     async exportParticipantsPDF(req, res) {
         try {
             const filters = req.query;
-            
-            // Generate PDF from Excel data using HTML conversion
-            const pdfBuffer = await exportUseCase.generateParticipantsPDFFromExcel(filters);
+            const userId = req.user?.id || 'anonymous';
 
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=data-peserta-${new Date().toISOString().split('T')[0]}.pdf`);
+            const job = await exportQueue.addExportJob({
+                entity: 'participants',
+                format: 'pdf',
+                filters,
+                userId,
+                endpoint: 'participants-pdf'
+            });
 
-            res.send(pdfBuffer);
+            res.status(202).json({
+                success: true,
+                message: 'Export job queued successfully',
+                jobId: job.id,
+                statusUrl: `/api/export/status/${job.id}`
+            });
         } catch (error) {
             console.error('Error in exportParticipantsPDF:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || 'Failed to export participants to PDF'
+                message: error.message || 'Failed to queue export job'
             });
         }
     }
@@ -46,18 +63,27 @@ class ExportController {
     async exportAssessorsExcel(req, res) {
         try {
             const filters = req.query;
-            const workbook = await exportUseCase.generateAssessorsExcel(filters);
+            const userId = req.user?.id || 'anonymous';
 
-            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.setHeader('Content-Disposition', `attachment; filename=data-asesor-${new Date().toISOString().split('T')[0]}.xlsx`);
+            const job = await exportQueue.addExportJob({
+                entity: 'assessors',
+                format: 'excel',
+                filters,
+                userId,
+                endpoint: 'assessors-excel'
+            });
 
-            await workbook.xlsx.write(res);
-            res.end();
+            res.status(202).json({
+                success: true,
+                message: 'Export job queued successfully',
+                jobId: job.id,
+                statusUrl: `/api/export/status/${job.id}`
+            });
         } catch (error) {
             console.error('Error in exportAssessorsExcel:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || 'Failed to export assessors to Excel'
+                message: error.message || 'Failed to queue export job'
             });
         }
     }
@@ -66,19 +92,27 @@ class ExportController {
     async exportAssessorsPDF(req, res) {
         try {
             const filters = req.query;
-            
-            // Generate PDF from Excel data using HTML conversion
-            const pdfBuffer = await exportUseCase.generateAssessorsPDFFromExcel(filters);
+            const userId = req.user?.id || 'anonymous';
 
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=data-asesor-${new Date().toISOString().split('T')[0]}.pdf`);
+            const job = await exportQueue.addExportJob({
+                entity: 'assessors',
+                format: 'pdf',
+                filters,
+                userId,
+                endpoint: 'assessors-pdf'
+            });
 
-            res.send(pdfBuffer);
+            res.status(202).json({
+                success: true,
+                message: 'Export job queued successfully',
+                jobId: job.id,
+                statusUrl: `/api/export/status/${job.id}`
+            });
         } catch (error) {
             console.error('Error in exportAssessorsPDF:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || 'Failed to export assessors to PDF'
+                message: error.message || 'Failed to queue export job'
             });
         }
     }
@@ -87,18 +121,27 @@ class ExportController {
     async exportAssessmentsExcel(req, res) {
         try {
             const filters = req.query;
-            const workbook = await exportUseCase.generateAssessmentsExcel(filters);
+            const userId = req.user?.id || 'anonymous';
 
-            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.setHeader('Content-Disposition', `attachment; filename=data-hasil-asesmen-${new Date().toISOString().split('T')[0]}.xlsx`);
+            const job = await exportQueue.addExportJob({
+                entity: 'assessments',
+                format: 'excel',
+                filters,
+                userId,
+                endpoint: 'assessments-excel'
+            });
 
-            await workbook.xlsx.write(res);
-            res.end();
+            res.status(202).json({
+                success: true,
+                message: 'Export job queued successfully',
+                jobId: job.id,
+                statusUrl: `/api/export/status/${job.id}`
+            });
         } catch (error) {
             console.error('Error in exportAssessmentsExcel:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || 'Failed to export assessments to Excel'
+                message: error.message || 'Failed to queue export job'
             });
         }
     }
@@ -107,19 +150,27 @@ class ExportController {
     async exportAssessmentsPDF(req, res) {
         try {
             const filters = req.query;
-            
-            // Generate PDF from Excel data using HTML conversion
-            const pdfBuffer = await exportUseCase.generateAssessmentsPDFFromExcel(filters);
+            const userId = req.user?.id || 'anonymous';
 
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=data-hasil-asesmen-${new Date().toISOString().split('T')[0]}.pdf`);
+            const job = await exportQueue.addExportJob({
+                entity: 'assessments',
+                format: 'pdf',
+                filters,
+                userId,
+                endpoint: 'assessments-pdf'
+            });
 
-            res.send(pdfBuffer);
+            res.status(202).json({
+                success: true,
+                message: 'Export job queued successfully',
+                jobId: job.id,
+                statusUrl: `/api/export/status/${job.id}`
+            });
         } catch (error) {
             console.error('Error in exportAssessmentsPDF:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || 'Failed to export assessments to PDF'
+                message: error.message || 'Failed to queue export job'
             });
         }
     }
@@ -127,43 +178,64 @@ class ExportController {
     // Export participants by status (not assessed)
     async exportParticipantsNotAssessedExcel(req, res) {
         try {
-            const filters = { 
+            const filters = {
                 ...req.query,
-                status: 'BELUM'
+                status: 'BELUM',
+                _endpoint: 'not-assessed'
             };
-            const workbook = await exportUseCase.generateParticipantsExcel(filters);
+            const userId = req.user?.id || 'anonymous';
 
-            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.setHeader('Content-Disposition', `attachment; filename=data-peserta-belum-asesmen-${new Date().toISOString().split('T')[0]}.xlsx`);
+            const job = await exportQueue.addExportJob({
+                entity: 'participants',
+                format: 'excel',
+                filters,
+                userId,
+                endpoint: 'participants-not-assessed-excel'
+            });
 
-            await workbook.xlsx.write(res);
-            res.end();
+            res.status(202).json({
+                success: true,
+                message: 'Export job queued successfully',
+                jobId: job.id,
+                statusUrl: `/api/export/status/${job.id}`
+            });
         } catch (error) {
             console.error('Error in exportParticipantsNotAssessedExcel:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || 'Failed to export not assessed participants to Excel'
+                message: error.message || 'Failed to queue export job'
             });
         }
     }
 
     async exportParticipantsNotAssessedPDF(req, res) {
         try {
-            const filters = { 
+            const filters = {
                 ...req.query,
-                status: 'BELUM'
+                status: 'BELUM',
+                _endpoint: 'not-assessed'
             };
-            const pdfBuffer = await exportUseCase.generateParticipantsPDFFromExcel(filters);
+            const userId = req.user?.id || 'anonymous';
 
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=data-peserta-belum-asesmen-${new Date().toISOString().split('T')[0]}.pdf`);
+            const job = await exportQueue.addExportJob({
+                entity: 'participants',
+                format: 'pdf',
+                filters,
+                userId,
+                endpoint: 'participants-not-assessed-pdf'
+            });
 
-            res.send(pdfBuffer);
+            res.status(202).json({
+                success: true,
+                message: 'Export job queued successfully',
+                jobId: job.id,
+                statusUrl: `/api/export/status/${job.id}`
+            });
         } catch (error) {
             console.error('Error in exportParticipantsNotAssessedPDF:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || 'Failed to export not assessed participants to PDF'
+                message: error.message || 'Failed to queue export job'
             });
         }
     }
@@ -171,45 +243,66 @@ class ExportController {
     // Export participants ready to assess
     async exportParticipantsReadyToAssessExcel(req, res) {
         try {
-            const filters = { 
+            const filters = {
                 ...req.query,
                 status: 'BELUM',
-                hasAssessor: true // participants with assigned assessor
+                hasAssessor: true,
+                _endpoint: 'ready-to-assess'
             };
-            const workbook = await exportUseCase.generateParticipantsExcel(filters);
+            const userId = req.user?.id || 'anonymous';
 
-            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.setHeader('Content-Disposition', `attachment; filename=data-peserta-siap-asesmen-${new Date().toISOString().split('T')[0]}.xlsx`);
+            const job = await exportQueue.addExportJob({
+                entity: 'participants',
+                format: 'excel',
+                filters,
+                userId,
+                endpoint: 'participants-ready-to-assess-excel'
+            });
 
-            await workbook.xlsx.write(res);
-            res.end();
+            res.status(202).json({
+                success: true,
+                message: 'Export job queued successfully',
+                jobId: job.id,
+                statusUrl: `/api/export/status/${job.id}`
+            });
         } catch (error) {
             console.error('Error in exportParticipantsReadyToAssessExcel:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || 'Failed to export ready to assess participants to Excel'
+                message: error.message || 'Failed to queue export job'
             });
         }
     }
 
     async exportParticipantsReadyToAssessPDF(req, res) {
         try {
-            const filters = { 
+            const filters = {
                 ...req.query,
                 status: 'BELUM',
-                hasAssessor: true
+                hasAssessor: true,
+                _endpoint: 'ready-to-assess'
             };
-            const pdfBuffer = await exportUseCase.generateParticipantsPDFFromExcel(filters);
+            const userId = req.user?.id || 'anonymous';
 
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=data-peserta-siap-asesmen-${new Date().toISOString().split('T')[0]}.pdf`);
+            const job = await exportQueue.addExportJob({
+                entity: 'participants',
+                format: 'pdf',
+                filters,
+                userId,
+                endpoint: 'participants-ready-to-assess-pdf'
+            });
 
-            res.send(pdfBuffer);
+            res.status(202).json({
+                success: true,
+                message: 'Export job queued successfully',
+                jobId: job.id,
+                statusUrl: `/api/export/status/${job.id}`
+            });
         } catch (error) {
             console.error('Error in exportParticipantsReadyToAssessPDF:', error);
             res.status(500).json({
                 success: false,
-                message: error.message || 'Failed to export ready to assess participants to PDF'
+                message: error.message || 'Failed to queue export job'
             });
         }
     }

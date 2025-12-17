@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const config = require('../../config/config');
 const { connectDB } = require('../../config/database');
+const redisManager = require('../../config/redis');
 const setupSwagger = require('../../config/swagger');
 const routes = require('../../internal/routes');
 const { generalLimiter } = require('../../internal/middleware/rateLimiter.middleware');
@@ -85,11 +86,24 @@ const startServer = async () => {
     // Connect to database
     await connectDB();
 
+    // Initialize Redis connections
+    console.log('[Redis] Initializing Redis connections...');
+    await redisManager.initCacheClient();
+    await redisManager.initQueueClient();
+
+    // Trigger dashboard cache warm-up (if enabled)
+    if (process.env.WARM_CACHE_ON_STARTUP === 'true' && redisManager.isConnected) {
+      console.log('[Cache] Dashboard warm-up will be handled by worker');
+      // Note: Dashboard warm-up is triggered by the worker on startup
+      // Main app just ensures Redis is connected
+    }
+
     // Start listening
     app.listen(config.port, () => {
       console.log('=================================');
       console.log(`🚀 Server running on port ${config.port}`);
       console.log(`📝 Environment: ${config.env}`);
+      console.log(`💾 Redis cache: ${redisManager.isConnected ? 'Connected' : 'Disabled'}`);
       console.log(`📚 API Docs: http://localhost:${config.port}/api-docs`);
       console.log(`🏥 Health check: http://localhost:${config.port}/api/health`);
       console.log('=================================');
@@ -101,13 +115,15 @@ const startServer = async () => {
 };
 
 // Handle graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully...');
+  await redisManager.shutdown();
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully...');
+  await redisManager.shutdown();
   process.exit(0);
 });
 

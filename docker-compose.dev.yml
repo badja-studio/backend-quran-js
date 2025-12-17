@@ -20,6 +20,24 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis Cache & Queue
+  redis:
+    image: redis:7-alpine
+    container_name: quran-redis-dev
+    restart: unless-stopped
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - quran-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   # Backend Application
   app:
     build:
@@ -54,17 +72,80 @@ services:
       API_RATE_LIMIT_MAX_REQUESTS: 200   # 200 API requests per 1 minutes per IP
       MASTER_DATA_RATE_LIMIT_WINDOW_MS: 60000  # 1 minutes
       MASTER_DATA_RATE_LIMIT_MAX_REQUESTS: 300 # 300 master data requests per 1 minutes per IP
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
+      # Cache Configuration
+      CACHE_ENABLED: "true"
+      CACHE_DEFAULT_TTL: 60
+      CACHE_MASTER_DATA_TTL: 300
+      CACHE_DASHBOARD_TTL: 7200
+      WARM_CACHE_ON_STARTUP: "true"
     volumes:
       - .:/app
       - /app/node_modules
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - quran-network
 
+  # Background Worker (Dashboard Cache & Export Jobs)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: quran-worker-dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: quran_db
+      DB_USER: quran_user
+      DB_PASSWORD: quran_password
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
+      # Cache Configuration
+      CACHE_ENABLED: "true"
+      CACHE_DEFAULT_TTL: 60
+      CACHE_MASTER_DATA_TTL: 300
+      CACHE_DASHBOARD_TTL: 7200
+      # Worker Configuration
+      WORKER_DASHBOARD_REFRESH_CRON: "0 */2 * * *"
+      WORKER_EXPORT_CONCURRENCY: 2
+      WORKER_EXPORT_TIMEOUT: 300000
+      # Puppeteer Configuration
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - quran-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   quran-network:
