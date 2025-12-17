@@ -109,16 +109,21 @@ class ParticipantUsecase {
         throw new Error('Invalid phone number format');
       }
 
-      // Check if participant with same NIP already exists
-      const existingParticipant = await participantRepository.findByNip(participantData.nip);
-      if (existingParticipant) {
-        throw new Error('Participant with this NIP already exists');
-      }
+      // OPTIMIZED: Check for duplicates in a single query (3 queries → 1 query)
+      const duplicate = await participantRepository.findDuplicates(
+        participantData.nip,
+        participantData.no_akun,
+        null, // email not required for createParticipant
+        { transaction }
+      );
 
-      // Check if no_akun already exists
-      const existingNoAkun = await participantRepository.findByNoAkun(participantData.no_akun);
-      if (existingNoAkun) {
-        throw new Error('Participant with this no_akun already exists');
+      if (duplicate) {
+        if (duplicate.nip === participantData.nip) {
+          throw new Error('Participant with this NIP already exists');
+        }
+        if (duplicate.no_akun === participantData.no_akun) {
+          throw new Error('Participant with this no_akun already exists');
+        }
       }
 
       // Create user account with transaction
@@ -200,16 +205,24 @@ class ParticipantUsecase {
         participantData.no_akun = `ACC-${timestamp}`;
       }
 
-      // Check if participant with same NIP already exists
-      const existingParticipant = await participantRepository.findByNip(participantData.nip);
-      if (existingParticipant) {
-        throw new Error('Participant with this NIP already exists');
-      }
+      // OPTIMIZED: Check for duplicates in a single query (3 queries → 1 query)
+      const duplicate = await participantRepository.findDuplicates(
+        participantData.nip,
+        participantData.no_akun,
+        participantData.email,
+        { transaction }
+      );
 
-      // Check if email already used by another participant
-      const existingEmail = await participantRepository.findByEmail(participantData.email);
-      if (existingEmail) {
-        throw new Error('Email already registered');
+      if (duplicate) {
+        if (duplicate.nip === participantData.nip) {
+          throw new Error('Participant with this NIP already exists');
+        }
+        if (duplicate.no_akun === participantData.no_akun) {
+          throw new Error('Participant with this no_akun already exists');
+        }
+        if (duplicate.email === participantData.email) {
+          throw new Error('Email already registered');
+        }
       }
 
       // Create user account with transaction

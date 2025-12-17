@@ -41,6 +41,11 @@ const Assessment = sequelize.define('Assessment', {
         type: DataTypes.STRING,
         allowNull: false,
         comment: 'Kategori penilaian'
+    },
+    kategori_normalized: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        comment: 'Normalized category for faster query performance (auto-populated by DB trigger)'
     }
 }, {
     tableName: 'assessments',

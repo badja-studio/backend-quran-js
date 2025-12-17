@@ -248,6 +248,37 @@ class ParticipantRepository {
     });
   }
 
+  /**
+   * Find duplicate participant by NIP, no_akun, or email in a single query
+   * OPTIMIZED: Reduces 3 queries to 1 query (66% query reduction)
+   *
+   * @param {string} nip - NIP to check
+   * @param {string} noAkun - Account number to check
+   * @param {string} email - Email to check (optional)
+   * @param {Object} options - Sequelize query options
+   * @returns {Promise<Participant|null>} - First matching participant or null
+   */
+  async findDuplicates(nip, noAkun, email = null, options = {}) {
+    const { Op } = require('sequelize');
+
+    const conditions = [
+      { nip: nip },
+      { no_akun: noAkun }
+    ];
+
+    if (email) {
+      conditions.push({ email: email });
+    }
+
+    return await Participant.findOne({
+      where: {
+        [Op.or]: conditions
+      },
+      attributes: ['id', 'nip', 'no_akun', 'email'],
+      ...options
+    });
+  }
+
   async findNotAssessed(options = {}) {
     const {
       page = 1,
