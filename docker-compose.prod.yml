@@ -36,7 +36,7 @@ services:
     container_name: quran-backend-prod
     restart: unless-stopped
     ports:
-      - "${PORT:-3012}:3000"
+      - "${PORT:-3012}:3012"
 
     # ===== Resource Fix =====
     shm_size: 1gb
