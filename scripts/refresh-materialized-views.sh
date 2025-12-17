@@ -14,19 +14,24 @@
 #
 # ============================================================================
 
-# Configuration - Update these values for your environment
+# Get script directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Load environment variables from .env file
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    # Export variables from .env, ignoring comments and empty lines
+    set -a
+    source <(grep -v '^#' "$PROJECT_ROOT/.env" | grep -v '^$' | sed 's/\r$//')
+    set +a
+fi
+
+# Database configuration (use env vars or defaults)
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
 DB_NAME="${DB_NAME:-quran_assessment}"
 DB_USER="${DB_USER:-postgres}"
-
-# Optional: Use .env file for database credentials
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-
-if [ -f "$PROJECT_ROOT/.env" ]; then
-    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
-fi
+DB_PASSWORD="${DB_PASSWORD}"
 
 # Log file
 LOG_FILE="$PROJECT_ROOT/logs/materialized-views-refresh.log"
