@@ -1,35 +1,41 @@
 const dashboardUseCase = require('../usecase/dashboard.usecase');
-const redisManager = require('../../config/redis');
+
+/**
+ * Simplified Dashboard Controller
+ * - Simple in-memory cache (no Redis)
+ * - Auto invalidate after 1 hour
+ * - Direct, lightweight, no blocking
+ */
+
+// Simple in-memory cache with 1 hour TTL
+const cache = new Map();
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour in milliseconds
+
+// Helper to get cached data or fetch new
+async function getCachedData(key, fetchFunction) {
+    const now = Date.now();
+    const cached = cache.get(key);
+
+    // Return cached data if valid (within 1 hour)
+    if (cached && (now - cached.timestamp) < CACHE_TTL) {
+        return cached.data;
+    }
+
+    // Fetch fresh data
+    const data = await fetchFunction();
+    cache.set(key, { data, timestamp: now });
+
+    return data;
+}
 
 class DashboardController {
     // GET /api/dashboard/overview
     async getDashboardOverview(req, res) {
         try {
-            let data;
-            const cacheKey = 'quran:dashboard:overview:v1';
-
-            // Try cache first if Redis is connected
-            if (redisManager.isConnected) {
-                try {
-                    const redis = redisManager.getCacheClient();
-                    const cached = await redis.get(cacheKey);
-
-                    if (cached) {
-                        data = JSON.parse(cached);
-                        res.setHeader('X-Cache', 'HIT');
-                        console.log('[Cache] Dashboard overview - HIT');
-                    }
-                } catch (error) {
-                    console.warn('[Cache] Redis read failed for dashboard overview, falling back to DB:', error.message);
-                }
-            }
-
-            // Fallback to DB if cache miss or Redis unavailable
-            if (!data) {
-                data = await dashboardUseCase.getDashboardOverview();
-                res.setHeader('X-Cache', 'MISS');
-                console.log('[Cache] Dashboard overview - MISS');
-            }
+            const data = await getCachedData(
+                'dashboard:overview',
+                () => dashboardUseCase.getDashboardOverview()
+            );
 
             res.status(200).json({
                 success: true,
@@ -48,31 +54,10 @@ class DashboardController {
     // GET /api/dashboard/statistics
     async getBasicStatistics(req, res) {
         try {
-            let data;
-            const cacheKey = 'quran:dashboard:statistics:v1';
-
-            // Try cache first if Redis is connected
-            if (redisManager.isConnected) {
-                try {
-                    const redis = redisManager.getCacheClient();
-                    const cached = await redis.get(cacheKey);
-
-                    if (cached) {
-                        data = JSON.parse(cached);
-                        res.setHeader('X-Cache', 'HIT');
-                        console.log('[Cache] Basic statistics - HIT');
-                    }
-                } catch (error) {
-                    console.warn('[Cache] Redis read failed for basic statistics, falling back to DB:', error.message);
-                }
-            }
-
-            // Fallback to DB if cache miss or Redis unavailable
-            if (!data) {
-                data = await dashboardUseCase.getBasicStatistics();
-                res.setHeader('X-Cache', 'MISS');
-                console.log('[Cache] Basic statistics - MISS');
-            }
+            const data = await getCachedData(
+                'dashboard:statistics',
+                () => dashboardUseCase.getBasicStatistics()
+            );
 
             res.status(200).json({
                 success: true,
@@ -91,31 +76,10 @@ class DashboardController {
     // GET /api/dashboard/participation
     async getParticipationStats(req, res) {
         try {
-            let data;
-            const cacheKey = 'quran:dashboard:participation:v1';
-
-            // Try cache first if Redis is connected
-            if (redisManager.isConnected) {
-                try {
-                    const redis = redisManager.getCacheClient();
-                    const cached = await redis.get(cacheKey);
-
-                    if (cached) {
-                        data = JSON.parse(cached);
-                        res.setHeader('X-Cache', 'HIT');
-                        console.log('[Cache] Participation stats - HIT');
-                    }
-                } catch (error) {
-                    console.warn('[Cache] Redis read failed for participation stats, falling back to DB:', error.message);
-                }
-            }
-
-            // Fallback to DB if cache miss or Redis unavailable
-            if (!data) {
-                data = await dashboardUseCase.getParticipationStats();
-                res.setHeader('X-Cache', 'MISS');
-                console.log('[Cache] Participation stats - MISS');
-            }
+            const data = await getCachedData(
+                'dashboard:participation',
+                () => dashboardUseCase.getParticipationStats()
+            );
 
             res.status(200).json({
                 success: true,
@@ -134,31 +98,10 @@ class DashboardController {
     // GET /api/dashboard/demographics
     async getDemographicData(req, res) {
         try {
-            let data;
-            const cacheKey = 'quran:dashboard:demographics:v1';
-
-            // Try cache first if Redis is connected
-            if (redisManager.isConnected) {
-                try {
-                    const redis = redisManager.getCacheClient();
-                    const cached = await redis.get(cacheKey);
-
-                    if (cached) {
-                        data = JSON.parse(cached);
-                        res.setHeader('X-Cache', 'HIT');
-                        console.log('[Cache] Demographics - HIT');
-                    }
-                } catch (error) {
-                    console.warn('[Cache] Redis read failed for demographics, falling back to DB:', error.message);
-                }
-            }
-
-            // Fallback to DB if cache miss or Redis unavailable
-            if (!data) {
-                data = await dashboardUseCase.getDemographicData();
-                res.setHeader('X-Cache', 'MISS');
-                console.log('[Cache] Demographics - MISS');
-            }
+            const data = await getCachedData(
+                'dashboard:demographics',
+                () => dashboardUseCase.getDemographicData()
+            );
 
             res.status(200).json({
                 success: true,
@@ -177,31 +120,10 @@ class DashboardController {
     // GET /api/dashboard/performance
     async getPerformanceAnalytics(req, res) {
         try {
-            let data;
-            const cacheKey = 'quran:dashboard:performance:v1';
-
-            // Try cache first if Redis is connected
-            if (redisManager.isConnected) {
-                try {
-                    const redis = redisManager.getCacheClient();
-                    const cached = await redis.get(cacheKey);
-
-                    if (cached) {
-                        data = JSON.parse(cached);
-                        res.setHeader('X-Cache', 'HIT');
-                        console.log('[Cache] Performance analytics - HIT');
-                    }
-                } catch (error) {
-                    console.warn('[Cache] Redis read failed for performance analytics, falling back to DB:', error.message);
-                }
-            }
-
-            // Fallback to DB if cache miss or Redis unavailable
-            if (!data) {
-                data = await dashboardUseCase.getPerformanceAnalytics();
-                res.setHeader('X-Cache', 'MISS');
-                console.log('[Cache] Performance analytics - MISS');
-            }
+            const data = await getCachedData(
+                'dashboard:performance',
+                () => dashboardUseCase.getPerformanceAnalytics()
+            );
 
             res.status(200).json({
                 success: true,
@@ -220,31 +142,10 @@ class DashboardController {
     // GET /api/dashboard/errors
     async getErrorAnalysis(req, res) {
         try {
-            let data;
-            const cacheKey = 'quran:dashboard:errors:v1';
-
-            // Try cache first if Redis is connected
-            if (redisManager.isConnected) {
-                try {
-                    const redis = redisManager.getCacheClient();
-                    const cached = await redis.get(cacheKey);
-
-                    if (cached) {
-                        data = JSON.parse(cached);
-                        res.setHeader('X-Cache', 'HIT');
-                        console.log('[Cache] Error analysis - HIT');
-                    }
-                } catch (error) {
-                    console.warn('[Cache] Redis read failed for error analysis, falling back to DB:', error.message);
-                }
-            }
-
-            // Fallback to DB if cache miss or Redis unavailable
-            if (!data) {
-                data = await dashboardUseCase.getErrorAnalysis();
-                res.setHeader('X-Cache', 'MISS');
-                console.log('[Cache] Error analysis - MISS');
-            }
+            const data = await getCachedData(
+                'dashboard:errors',
+                () => dashboardUseCase.getErrorAnalysis()
+            );
 
             res.status(200).json({
                 success: true,
@@ -263,31 +164,10 @@ class DashboardController {
     // GET /api/dashboard/provinces
     async getProvinceData(req, res) {
         try {
-            let data;
-            const cacheKey = 'quran:dashboard:provinces:v1';
-
-            // Try cache first if Redis is connected
-            if (redisManager.isConnected) {
-                try {
-                    const redis = redisManager.getCacheClient();
-                    const cached = await redis.get(cacheKey);
-
-                    if (cached) {
-                        data = JSON.parse(cached);
-                        res.setHeader('X-Cache', 'HIT');
-                        console.log('[Cache] Province data - HIT');
-                    }
-                } catch (error) {
-                    console.warn('[Cache] Redis read failed for province data, falling back to DB:', error.message);
-                }
-            }
-
-            // Fallback to DB if cache miss or Redis unavailable
-            if (!data) {
-                data = await dashboardUseCase.getProvinceData();
-                res.setHeader('X-Cache', 'MISS');
-                console.log('[Cache] Province data - MISS');
-            }
+            const data = await getCachedData(
+                'dashboard:provinces',
+                () => dashboardUseCase.getProvinceData()
+            );
 
             res.status(200).json({
                 success: true,
@@ -301,6 +181,15 @@ class DashboardController {
                 message: error.message || 'Failed to retrieve province data'
             });
         }
+    }
+
+    // Clear cache manually (optional endpoint for admin)
+    clearCache(req, res) {
+        cache.clear();
+        res.status(200).json({
+            success: true,
+            message: 'Dashboard cache cleared successfully'
+        });
     }
 }
 

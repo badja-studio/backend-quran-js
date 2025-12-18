@@ -2,15 +2,15 @@ const { Worker } = require('bullmq');
 const { connectDB } = require('../../config/database');
 const redisManager = require('../../config/redis');
 const config = require('../../config/config');
-const dashboardQueue = require('../../internal/queues/dashboard.queue');
+// const dashboardQueue = require('../../internal/queues/dashboard.queue'); // DISABLED: Dashboard now uses in-memory cache
 const exportQueue = require('../../internal/queues/export.queue');
-const { processDashboardRefresh } = require('../../internal/workers/processors/dashboard.processor');
+// const { processDashboardRefresh } = require('../../internal/workers/processors/dashboard.processor'); // DISABLED
 const { processExportJob } = require('../../internal/workers/processors/export.processor');
 
 /**
  * Workers
  */
-let dashboardWorker = null;
+// let dashboardWorker = null; // DISABLED: Dashboard now uses in-memory cache
 let exportWorker = null;
 
 /**
@@ -38,36 +38,38 @@ async function startWorker() {
     }
 
     // Initialize queues
-    console.log('[Worker] Initializing dashboard queue...');
-    await dashboardQueue.initialize();
+    // console.log('[Worker] Initializing dashboard queue...'); // DISABLED
+    // await dashboardQueue.initialize(); // DISABLED
 
     console.log('[Worker] Initializing export queue...');
     await exportQueue.initialize();
 
+    // DASHBOARD WORKER DISABLED: Dashboard now uses simple in-memory cache with 1-hour TTL
+    // No need for Redis caching or worker service
     // Schedule dashboard refresh (every 2 hours)
-    console.log('[Worker] Scheduling dashboard refresh...');
-    await dashboardQueue.scheduleDashboardRefresh();
+    // console.log('[Worker] Scheduling dashboard refresh...');
+    // await dashboardQueue.scheduleDashboardRefresh();
 
     // Trigger immediate refresh on startup
-    console.log('[Worker] Triggering immediate dashboard refresh...');
-    await dashboardQueue.triggerImmediateRefresh();
+    // console.log('[Worker] Triggering immediate dashboard refresh...');
+    // await dashboardQueue.triggerImmediateRefresh();
 
     // Create dashboard worker
-    console.log('[Worker] Creating dashboard worker...');
-    dashboardWorker = new Worker(
-      'dashboard-refresh',
-      async (job) => {
-        return await processDashboardRefresh(job);
-      },
-      {
-        connection: queueConnection,
-        concurrency: 1, // Only one dashboard refresh at a time
-        limiter: {
-          max: 1,
-          duration: 60000 // Max 1 job per minute
-        }
-      }
-    );
+    // console.log('[Worker] Creating dashboard worker...');
+    // dashboardWorker = new Worker(
+    //   'dashboard-refresh',
+    //   async (job) => {
+    //     return await processDashboardRefresh(job);
+    //   },
+    //   {
+    //     connection: queueConnection,
+    //     concurrency: 1, // Only one dashboard refresh at a time
+    //     limiter: {
+    //       max: 1,
+    //       duration: 60000 // Max 1 job per minute
+    //     }
+    //   }
+    // );
 
     // Create export worker
     const exportConcurrency = config.worker.exportConcurrency || 2;
@@ -88,18 +90,18 @@ async function startWorker() {
       }
     );
 
-    // Dashboard worker event handlers
-    dashboardWorker.on('completed', (job, result) => {
-      console.log(`[Dashboard Worker] Job ${job.id} completed:`, result);
-    });
+    // DASHBOARD WORKER EVENT HANDLERS DISABLED
+    // dashboardWorker.on('completed', (job, result) => {
+    //   console.log(`[Dashboard Worker] Job ${job.id} completed:`, result);
+    // });
 
-    dashboardWorker.on('failed', (job, error) => {
-      console.error(`[Dashboard Worker] Job ${job?.id} failed:`, error.message);
-    });
+    // dashboardWorker.on('failed', (job, error) => {
+    //   console.error(`[Dashboard Worker] Job ${job?.id} failed:`, error.message);
+    // });
 
-    dashboardWorker.on('error', (error) => {
-      console.error('[Dashboard Worker] Worker error:', error.message);
-    });
+    // dashboardWorker.on('error', (error) => {
+    //   console.error('[Dashboard Worker] Worker error:', error.message);
+    // });
 
     // Export worker event handlers
     exportWorker.on('completed', (job, result) => {
@@ -120,7 +122,7 @@ async function startWorker() {
 
     console.log('=================================');
     console.log('✅ Worker started successfully');
-    console.log('📊 Dashboard refresh scheduled (every 2 hours)');
+    console.log('📊 Dashboard: Using in-memory cache (1-hour TTL, no worker needed)');
     console.log(`📥 Export worker ready (concurrency: ${exportConcurrency})`);
     console.log('=================================');
 
@@ -138,10 +140,10 @@ async function shutdown() {
 
   try {
     // Close workers
-    if (dashboardWorker) {
-      await dashboardWorker.close();
-      console.log('[Worker] Dashboard worker closed');
-    }
+    // if (dashboardWorker) { // DISABLED
+    //   await dashboardWorker.close();
+    //   console.log('[Worker] Dashboard worker closed');
+    // }
 
     if (exportWorker) {
       await exportWorker.close();
@@ -149,7 +151,7 @@ async function shutdown() {
     }
 
     // Close queues
-    await dashboardQueue.close();
+    // await dashboardQueue.close(); // DISABLED
     await exportQueue.close();
 
     // Shutdown Redis
@@ -181,4 +183,5 @@ process.on('unhandledRejection', (reason, promise) => {
 // Start the worker
 startWorker();
 
-module.exports = { dashboardWorker };
+// module.exports = { dashboardWorker }; // DISABLED: Dashboard worker no longer used
+module.exports = { exportWorker };
