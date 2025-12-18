@@ -105,7 +105,23 @@ WITH category_errors AS (
                     ELSE 'default'
                 END
             ELSE NULL
-        END as mad_subtype
+        END as mad_subtype,
+        -- PENGURANGAN type detection with granular deductions
+        CASE
+            WHEN LOWER(TRIM(a.kategori)) LIKE '%pengurangan%' OR LOWER(TRIM(a.kategori)) LIKE '%tidak bisa%' THEN
+                CASE
+                    WHEN LOWER(TRIM(a.huruf)) LIKE '%tidak bisa membaca%' THEN 90
+                    WHEN LOWER(TRIM(a.huruf)) LIKE '%suara tidak ada%' THEN 100
+                    WHEN LOWER(TRIM(a.huruf)) LIKE '%video rusak%' THEN 100
+                    WHEN LOWER(TRIM(a.huruf)) LIKE '%terindikasi dubbing%' THEN 100
+                    WHEN LOWER(TRIM(a.huruf)) LIKE '%video tidak ada gambar%' THEN 0
+                    WHEN LOWER(TRIM(a.huruf)) LIKE '%ayat%tidak sesuai%' THEN 0
+                    WHEN LOWER(TRIM(a.huruf)) LIKE '%maqro%tidak sesuai%' THEN 100
+                    WHEN LOWER(TRIM(a.huruf)) LIKE '%maqro%sebagian%' THEN 50
+                    ELSE 90
+                END
+            ELSE NULL
+        END as pengurangan_deduction
     FROM assessments a
     GROUP BY a.peserta_id, LOWER(TRIM(a.kategori)), LOWER(TRIM(a.huruf))
 ),
@@ -128,7 +144,9 @@ participant_category_aggregates AS (
         SUM(CASE WHEN category_normalized = 'MAD' AND mad_subtype = 'wajib' THEN total_errors ELSE 0 END) as mad_wajib_errors,
         SUM(CASE WHEN category_normalized = 'MAD' AND mad_subtype = 'lazim' THEN total_errors ELSE 0 END) as mad_lazim_errors,
         SUM(CASE WHEN category_normalized = 'MAD' AND mad_subtype = 'default' THEN total_errors ELSE 0 END) as mad_default_errors,
-        SUM(CASE WHEN category_normalized = 'MAD' THEN item_count ELSE 0 END) as mad_item_count
+        SUM(CASE WHEN category_normalized = 'MAD' THEN item_count ELSE 0 END) as mad_item_count,
+        -- For PENGURANGAN: track maximum deduction (most severe penalty wins)
+        MAX(CASE WHEN category_normalized = 'PENGURANGAN' AND total_errors > 0 THEN pengurangan_deduction ELSE 0 END) as max_pengurangan_deduction
     FROM category_errors
     GROUP BY peserta_id, category_normalized
 ),
@@ -136,12 +154,11 @@ participant_scores AS (
     -- Calculate final scores for each participant
     SELECT
         p.id as peserta_id,
-        -- Check for PENGURANGAN penalty (overrides all other scoring)
-        (SELECT COUNT(*) > 0
-         FROM participant_category_aggregates pca
-         WHERE pca.peserta_id = p.id
-           AND pca.category_normalized = 'PENGURANGAN'
-           AND pca.total_errors > 0) as has_pengurangan,
+        -- Get maximum PENGURANGAN deduction (0, 50, 90, or 100)
+        COALESCE((SELECT MAX(pca.max_pengurangan_deduction)
+                  FROM participant_category_aggregates pca
+                  WHERE pca.peserta_id = p.id
+                    AND pca.category_normalized = 'PENGURANGAN'), 0) as max_pengurangan_deduction,
         -- Calculate score for each category
         ${this._buildCategoryScoreCalculation()}
     FROM participants p

@@ -65,6 +65,62 @@ const SCORING_RULES = {
 };
 
 /**
+ * Pengurangan (deduction) types with their point deductions
+ * Deduction values:
+ * - 100: Complete failure (score = 0)
+ * - 90: Severe failure (score = 10)
+ * - 50: Partial penalty (subtract 50 from normal score)
+ * - 0: No effect (informational only)
+ */
+const PENGURANGAN_TYPES = [
+    "Tidak Bisa Membaca",
+    "Suara Tidak Ada",
+    "Video Rusak",
+    "Terindikasi Dubbing",
+    "Video Tidak Ada Gambar",
+    "Ayat yg Dibaca Tidak Sesuai",
+    "Maqro yang dibaca tidak sesuai",
+    "Maqro yg dibaca cuma sebagian",
+];
+
+const PENGURANGAN_DEDUCTIONS = {
+    "Tidak Bisa Membaca": 90,
+    "Suara Tidak Ada": 100,
+    "Video Rusak": 100,
+    "Terindikasi Dubbing": 100,
+    "Video Tidak Ada Gambar": 0,
+    "Ayat yg Dibaca Tidak Sesuai": 0,
+    "Maqro yang dibaca tidak sesuai": 100,
+    "Maqro yg dibaca cuma sebagian": 50,
+};
+
+/**
+ * Get the pengurangan deduction amount for a given huruf value
+ * @param {string} huruf - The huruf field from assessment
+ * @returns {number} - Deduction amount (0, 50, 90, or 100)
+ */
+function getPenguranganDeduction(huruf) {
+    const normalized = (huruf || '').trim();
+
+    // Try exact match first
+    if (PENGURANGAN_DEDUCTIONS.hasOwnProperty(normalized)) {
+        return PENGURANGAN_DEDUCTIONS[normalized];
+    }
+
+    // Try case-insensitive match
+    const lowerHuruf = normalized.toLowerCase();
+    for (const [key, value] of Object.entries(PENGURANGAN_DEDUCTIONS)) {
+        if (key.toLowerCase() === lowerHuruf) {
+            return value;
+        }
+    }
+
+    // Default to 90 (current behavior) for unknown pengurangan types
+    console.warn(`Unknown PENGURANGAN huruf type: "${huruf}". Defaulting to 90 deduction.`);
+    return 90;
+}
+
+/**
  * Normalize category name to match scoring rules
  * @param {string} category - Raw category name from assessment
  * @returns {string} - Normalized category key
@@ -292,20 +348,33 @@ function calculateParticipantScores(assessments) {
             });
         }
     });
-    
-    // Check if there are errors in PENGURANGAN category first
+
+    // Determine pengurangan deduction amount by checking all PENGURANGAN assessments
+    let penguranganDeduction = 0; // 0 = no penalty
     const penguranganData = categoryData['PENGURANGAN'];
-    const hasPenguranganErrors = penguranganData && penguranganData.totalErrors > 0;
-    
-    // If there are PENGURANGAN errors, override everything to score 10
-    if (hasPenguranganErrors) {
+
+    if (penguranganData && penguranganData.items && penguranganData.items.length > 0) {
+        // Check each pengurangan assessment
+        penguranganData.items.forEach(item => {
+            const errors = parseInt(item.errors) || 0;
+            if (errors > 0) {
+                // This pengurangan type has errors, get its deduction amount
+                const deduction = getPenguranganDeduction(item.huruf);
+                // Track the maximum deduction (most severe penalty wins)
+                penguranganDeduction = Math.max(penguranganDeduction, deduction);
+            }
+        });
+    }
+
+    // Handle override cases: 100 deduction (complete failure - score = 0)
+    if (penguranganDeduction === 100) {
         const categoryScores = {};
-        
-        // Set all categories to 0 except small portion for total of 10
+
+        // Set all categories to 0
         Object.keys(SCORING_RULES).forEach(categoryKey => {
             const catData = categoryData[categoryKey] || { itemCount: 0, totalErrors: 0 };
             const rule = SCORING_RULES[categoryKey];
-            
+
             if (categoryKey === 'PENGURANGAN') {
                 categoryScores[categoryKey] = {
                     category: categoryKey,
@@ -313,14 +382,58 @@ function calculateParticipantScores(assessments) {
                     percentage: 0,
                     itemCount: catData.itemCount,
                     totalErrors: catData.totalErrors,
-                    totalDeduction: 90, // Fixed 90 point deduction
+                    totalDeduction: 100,
+                    finalScore: 0,
+                    isPenalty: true
+                };
+            } else {
+                // All other categories reduced to 0
+                categoryScores[categoryKey] = {
+                    category: categoryKey,
+                    initialScore: rule.initial,
+                    percentage: rule.percentage,
+                    itemCount: catData.itemCount,
+                    totalErrors: catData.totalErrors,
+                    totalDeduction: rule.initial,
+                    finalScore: 0
+                };
+            }
+        });
+
+        return {
+            categoryScores,
+            overallScore: 0, // Complete failure
+            totalDeduction: 100,
+            penaltyDeduction: 100,
+            assessmentCount: assessments.length,
+            calculatedAt: new Date().toISOString()
+        };
+    }
+
+    // Handle override cases: 90 deduction (severe failure - score = 10)
+    if (penguranganDeduction === 90) {
+        const categoryScores = {};
+
+        // Set all categories to proportionally reduced scores to total 10
+        Object.keys(SCORING_RULES).forEach(categoryKey => {
+            const catData = categoryData[categoryKey] || { itemCount: 0, totalErrors: 0 };
+            const rule = SCORING_RULES[categoryKey];
+
+            if (categoryKey === 'PENGURANGAN') {
+                categoryScores[categoryKey] = {
+                    category: categoryKey,
+                    initialScore: 0,
+                    percentage: 0,
+                    itemCount: catData.itemCount,
+                    totalErrors: catData.totalErrors,
+                    totalDeduction: 90,
                     finalScore: 0,
                     isPenalty: true
                 };
             } else {
                 // Other categories get proportionally reduced scores to total 10
                 const proportionalScore = (rule.initial / 100) * 10; // 10% of original score
-                
+
                 categoryScores[categoryKey] = {
                     category: categoryKey,
                     initialScore: rule.initial,
@@ -332,10 +445,10 @@ function calculateParticipantScores(assessments) {
                 };
             }
         });
-        
+
         return {
             categoryScores,
-            overallScore: 10, // Fixed score when there are PENGURANGAN errors
+            overallScore: 10, // Severe failure
             totalDeduction: 90,
             penaltyDeduction: 90,
             assessmentCount: assessments.length,
@@ -343,11 +456,10 @@ function calculateParticipantScores(assessments) {
         };
     }
     
-    // Normal calculation when no PENGURANGAN errors
+    // Normal calculation (50 deduction or 0 deduction)
     const categoryScores = {};
     let totalScore = 0;
-    let penaltyDeduction = 0; // For PENGURANGAN category
-    
+
     // Process each main category
     Object.keys(SCORING_RULES).forEach(categoryKey => {
         const catData = categoryData[categoryKey] || { itemCount: 0, totalErrors: 0 };
@@ -357,7 +469,7 @@ function calculateParticipantScores(assessments) {
         let finalScore = rule.initial;
         
         if (catData.itemCount > 0) {
-            // Special handling for PENGURANGAN category (should not reach here if errors exist)
+            // Special handling for PENGURANGAN category
             if (categoryKey === 'PENGURANGAN') {
                 categoryScores[categoryKey] = {
                     category: categoryKey,
@@ -365,7 +477,7 @@ function calculateParticipantScores(assessments) {
                     percentage: 0,
                     itemCount: catData.itemCount,
                     totalErrors: catData.totalErrors,
-                    totalDeduction: 0,
+                    totalDeduction: penguranganDeduction,
                     finalScore: 0,
                     isPenalty: true
                 };
@@ -433,15 +545,20 @@ function calculateParticipantScores(assessments) {
         
         totalScore += finalScore;
     });
-    
-    // Apply penalty deduction to overall score
-    const overallScore = Math.max(0, Number((totalScore - penaltyDeduction).toFixed(2)));
+
+    // Apply 50-point partial penalty if applicable
+    if (penguranganDeduction === 50) {
+        totalScore = Math.max(0, totalScore - 50);
+    }
+
+    // Apply penalty deduction to overall score (for backward compatibility, though not used in new logic)
+    const overallScore = Number(totalScore.toFixed(2));
     
     return {
         categoryScores,
         overallScore,
         totalDeduction: Object.values(categoryScores).reduce((sum, cat) => sum + cat.totalDeduction, 0),
-        penaltyDeduction: Number(penaltyDeduction.toFixed(2)),
+        penaltyDeduction: penguranganDeduction,
         assessmentCount: assessments.length,
         calculatedAt: new Date().toISOString()
     };
@@ -479,10 +596,13 @@ function formatScoresForAPI(scoreData) {
 
 module.exports = {
     SCORING_RULES,
+    PENGURANGAN_TYPES,
+    PENGURANGAN_DEDUCTIONS,
     normalizeCategoryName,
     calculateCategoryDeduction,
     calculateCategoryDeductionNew,
     calculateCategoryScore,
     calculateParticipantScores,
-    formatScoresForAPI
+    formatScoresForAPI,
+    getPenguranganDeduction
 };
