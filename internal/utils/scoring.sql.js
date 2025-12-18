@@ -171,16 +171,8 @@ participant_scores AS (
      * @private
      */
     static _buildCategoryScoreCalculation() {
-        return `
-        -- Overall score calculation
-        CASE
-            -- PENGURANGAN penalty: override to score 10
-            WHEN (SELECT COUNT(*) > 0
-                  FROM participant_category_aggregates pca
-                  WHERE pca.peserta_id = p.id
-                    AND pca.category_normalized = 'PENGURANGAN'
-                    AND pca.total_errors > 0) THEN 10.0
-            ELSE (
+        // Base score calculation (sum of all categories) - reused for different pengurangan levels
+        const baseScoreSQL = `
                 -- MAKHRAJ score calculation with per-item fairness
                 COALESCE((
                     SELECT GREATEST(0, ${SCORING_RULES.MAKHRAJ.initial} - LEAST(
@@ -266,8 +258,23 @@ participant_scores AS (
                     ))
                     FROM participant_category_aggregates
                     WHERE peserta_id = p.id AND category_normalized = 'KELANCARAN'
-                ), ${SCORING_RULES.KELANCARAN.initial})
-            )
+                ), ${SCORING_RULES.KELANCARAN.initial})`;
+
+        return `
+        -- Overall score calculation with granular pengurangan rules
+        CASE
+            -- Pengurangan = 100: Complete failure (score = 0)
+            WHEN max_pengurangan_deduction = 100 THEN 0.0
+
+            -- Pengurangan = 90: Severe failure (score = 10)
+            WHEN max_pengurangan_deduction = 90 THEN 10.0
+
+            -- Pengurangan = 50: Partial penalty (base score - 50, capped at 0)
+            WHEN max_pengurangan_deduction = 50 THEN
+                GREATEST(0, (${baseScoreSQL}) - 50)
+
+            -- Pengurangan = 0 or no pengurangan: Normal calculation
+            ELSE (${baseScoreSQL})
         END as overall_score`;
     }
 
