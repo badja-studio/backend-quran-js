@@ -192,36 +192,197 @@ describe('Scoring Utils', () => {
         });
     });
 
-    describe('calculateParticipantScores - Penalty Category', () => {
-        test('should set overall score to 10 when PENGURANGAN has errors', () => {
-            const assessments = [
-                { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "د", kategori: "makhraj", nilai: 0 },
-                { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "خ", kategori: "makhraj", nilai: 0 },
-                { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Tidak Bisa Membaca", kategori: "pengurangan", nilai: 1 },
-            ];
+    describe('calculateParticipantScores - Granular Pengurangan Rules', () => {
+        describe('100 Deduction - Complete Failure (Score = 0)', () => {
+            test('should set score to 0 for "Suara Tidak Ada"', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "د", kategori: "makhraj", nilai: 0 },
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Suara Tidak Ada", kategori: "pengurangan", nilai: 1 },
+                ];
 
-            const result = calculateParticipantScores(assessments);
-            
-            // When PENGURANGAN has errors, overall score should be fixed at 10
-            expect(result.overallScore).toBe(10);
-            expect(result.penaltyDeduction).toBe(90);
-            
-            // Categories should have proportionally reduced scores (10% of original)
-            expect(result.categoryScores.MAKHRAJ.finalScore).toBeCloseTo(5.55, 1); // 55.5 * 0.1
-            expect(result.categoryScores.SIFAT.finalScore).toBeCloseTo(1.45, 1); // 14.5 * 0.1
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(0);
+                expect(result.penaltyDeduction).toBe(100);
+                expect(result.categoryScores.PENGURANGAN.totalDeduction).toBe(100);
+            });
+
+            test('should set score to 0 for "Video Rusak"', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Video Rusak", kategori: "pengurangan", nilai: 2 },
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(0);
+                expect(result.penaltyDeduction).toBe(100);
+            });
+
+            test('should set score to 0 for "Terindikasi Dubbing"', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Terindikasi Dubbing", kategori: "pengurangan", nilai: 1 },
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(0);
+                expect(result.penaltyDeduction).toBe(100);
+            });
+
+            test('should set score to 0 for "Maqro yang dibaca tidak sesuai"', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Maqro yang dibaca tidak sesuai", kategori: "pengurangan", nilai: 1 },
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(0);
+                expect(result.penaltyDeduction).toBe(100);
+            });
         });
 
-        test('should work with multiple PENGURANGAN errors (still score 10)', () => {
-            const assessments = [
-                { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Tidak Bisa Membaca", kategori: "pengurangan", nilai: 5 },
-                { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Tidak Bisa", kategori: "pengurangan", nilai: 3 },
-            ];
+        describe('90 Deduction - Severe Failure (Score = 10)', () => {
+            test('should set score to 10 for "Tidak Bisa Membaca"', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "د", kategori: "makhraj", nilai: 0 },
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Tidak Bisa Membaca", kategori: "pengurangan", nilai: 1 },
+                ];
 
-            const result = calculateParticipantScores(assessments);
-            
-            // Even with multiple/high PENGURANGAN errors, score is still fixed at 10
-            expect(result.overallScore).toBe(10);
-            expect(result.penaltyDeduction).toBe(90);
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(10);
+                expect(result.penaltyDeduction).toBe(90);
+                expect(result.categoryScores.MAKHRAJ.finalScore).toBeCloseTo(5.55, 1);
+            });
+        });
+
+        describe('50 Deduction - Partial Penalty', () => {
+            test('should subtract 50 from normal score for "Maqro yg dibaca cuma sebagian"', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "د", kategori: "makhraj", nilai: 0 },
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "خ", kategori: "makhraj", nilai: 0 },
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Maqro yg dibaca cuma sebagian", kategori: "pengurangan", nilai: 1 },
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                // Normal score would be 100, minus 50 = 50
+                expect(result.overallScore).toBe(50);
+                expect(result.penaltyDeduction).toBe(50);
+            });
+
+            test('should not go below 0 when 50 deduction applied', () => {
+                const assessments = [
+                    // Heavy errors that would result in score < 50
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "د", kategori: "makhraj", nilai: 10 },
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "خ", kategori: "makhraj", nilai: 10 },
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Maqro yg dibaca cuma sebagian", kategori: "pengurangan", nilai: 1 },
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBeGreaterThanOrEqual(0);
+                expect(result.penaltyDeduction).toBe(50);
+            });
+
+            test('should preserve other category scores with 50 deduction', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "د", kategori: "makhraj", nilai: 1 }, // -1.5
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Tanaffus", kategori: "ahkam", nilai: 1 }, // -2
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Maqro yg dibaca cuma sebagian", kategori: "pengurangan", nilai: 1 },
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                // Base score: 100 - 1.5 - 2 = 96.5
+                // After 50 deduction: 96.5 - 50 = 46.5
+                expect(result.overallScore).toBe(46.5);
+                expect(result.categoryScores.MAKHRAJ.totalDeduction).toBe(1.5);
+                expect(result.categoryScores.AHKAM.totalDeduction).toBe(2);
+            });
+        });
+
+        describe('0 Deduction - No Effect (Informational)', () => {
+            test('should have no effect for "Video Tidak Ada Gambar"', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "د", kategori: "makhraj", nilai: 0 },
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Video Tidak Ada Gambar", kategori: "pengurangan", nilai: 1 },
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(100); // No effect
+                expect(result.penaltyDeduction).toBe(0);
+            });
+
+            test('should have no effect for "Ayat yg Dibaca Tidak Sesuai"', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "د", kategori: "makhraj", nilai: 1 }, // 1.5 deduction
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Ayat yg Dibaca Tidak Sesuai", kategori: "pengurangan", nilai: 1 },
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(98.5); // Only makhraj deduction applies
+                expect(result.penaltyDeduction).toBe(0);
+            });
+        });
+
+        describe('Multiple Pengurangan - Highest Deduction Wins', () => {
+            test('should use highest deduction when multiple pengurangan types present (100 wins)', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Maqro yg dibaca cuma sebagian", kategori: "pengurangan", nilai: 1 }, // 50
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Video Rusak", kategori: "pengurangan", nilai: 1 }, // 100
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(0); // 100 deduction wins
+                expect(result.penaltyDeduction).toBe(100);
+            });
+
+            test('should use 90 when both 90 and 50 present', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Tidak Bisa Membaca", kategori: "pengurangan", nilai: 1 }, // 90
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Maqro yg dibaca cuma sebagian", kategori: "pengurangan", nilai: 1 }, // 50
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(10); // 90 deduction wins
+                expect(result.penaltyDeduction).toBe(90);
+            });
+
+            test('should use 50 when both 50 and 0 present', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Maqro yg dibaca cuma sebagian", kategori: "pengurangan", nilai: 1 }, // 50
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Video Tidak Ada Gambar", kategori: "pengurangan", nilai: 1 }, // 0
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(50); // 50 deduction wins
+                expect(result.penaltyDeduction).toBe(50);
+            });
+        });
+
+        describe('Case Insensitivity and Edge Cases', () => {
+            test('should handle different casing', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "TIDAK BISA MEMBACA", kategori: "pengurangan", nilai: 1 },
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(10);
+                expect(result.penaltyDeduction).toBe(90);
+            });
+
+            test('should handle pengurangan with nilai = 0 (no error)', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Video Rusak", kategori: "pengurangan", nilai: 0 },
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(100); // No penalty since nilai = 0
+                expect(result.penaltyDeduction).toBe(0);
+            });
+
+            test('should handle unknown pengurangan type (fallback to 90)', () => {
+                const assessments = [
+                    { peserta_id: "test-1", asesor_id: "asesor-1", huruf: "Unknown Type", kategori: "pengurangan", nilai: 1 },
+                ];
+
+                const result = calculateParticipantScores(assessments);
+                expect(result.overallScore).toBe(10); // Falls back to 90 deduction
+                expect(result.penaltyDeduction).toBe(90);
+            });
         });
     });
 
