@@ -32,13 +32,60 @@ class DashboardRepository {
         return await Assessor.count();
     }
 
-    // Get average score - OPTIMIZED with RAW SQL
+    // Get average score - CORRECTED to use calculated overall scores
+    // IMPORTANT: This now calculates proper overall scores using the scoring system,
+    // not raw assessment values which represent error counts
     async getAverageScore() {
-        const [result] = await sequelize.query(
-            'SELECT AVG(nilai)::numeric(10,2) as avg FROM assessments',
-            { type: QueryTypes.SELECT }
-        );
-        return parseFloat(result?.avg || 0).toFixed(2);
+        const scoringUtils = require('../utils/scoring.utils');
+        
+        // Get all participants with completed assessments
+        const participantData = await sequelize.query(`
+            SELECT 
+                p.id as participant_id,
+                json_agg(
+                    json_build_object(
+                        'huruf', a.huruf,
+                        'kategori', a.kategori,
+                        'nilai', a.nilai
+                    )
+                ) as assessments
+            FROM participants p
+            INNER JOIN assessments a ON p.id = a.peserta_id
+            WHERE p.status = 'SUDAH'
+            GROUP BY p.id
+            HAVING COUNT(a.id) > 0
+            LIMIT 1000
+        `, { type: QueryTypes.SELECT });
+
+        if (participantData.length === 0) {
+            return 0;
+        }
+
+        let totalScore = 0;
+        let validParticipants = 0;
+
+        // Calculate overall score for each participant
+        for (const participant of participantData) {
+            const assessments = participant.assessments;
+            
+            try {
+                const scoreResult = scoringUtils.calculateParticipantScores(assessments);
+                const overallScore = parseFloat(scoreResult.overallScore || 0);
+                
+                totalScore += overallScore;
+                validParticipants++;
+            } catch (error) {
+                console.error(`Error calculating score for participant ${participant.participant_id}:`, error);
+                // Skip this participant if scoring fails
+            }
+        }
+
+        if (validParticipants === 0) {
+            return 0;
+        }
+
+        const avgScore = totalScore / validParticipants;
+        return parseFloat(avgScore.toFixed(2));
     }
 
     // Get participation by education level - SAFE (GROUP BY on indexed column)
@@ -140,79 +187,229 @@ class DashboardRepository {
         }));
     }
 
-    // Get average scores by education level - OPTIMIZED with RAW SQL
-    // Uses idx_assessments_peserta_id for efficient JOIN
+    // Get average scores by education level - CORRECTED to use calculated overall scores
     async getAverageScoresByEducationLevel() {
-        const result = await sequelize.query(`
-            SELECT
+        const scoringUtils = require('../utils/scoring.utils');
+        
+        // Get participants grouped by education level with their assessments
+        const participantData = await sequelize.query(`
+            SELECT 
+                p.id as participant_id,
                 p.jenjang,
-                AVG(a.nilai)::numeric(10,2) as avg_score,
-                COUNT(DISTINCT p.id) as participant_count
+                json_agg(
+                    json_build_object(
+                        'huruf', a.huruf,
+                        'kategori', a.kategori,
+                        'nilai', a.nilai
+                    )
+                ) as assessments
             FROM participants p
             INNER JOIN assessments a ON p.id = a.peserta_id
-            WHERE p.jenjang IS NOT NULL
-            GROUP BY p.jenjang
-            ORDER BY avg_score DESC
+            WHERE p.jenjang IS NOT NULL AND p.status = 'SUDAH'
+            GROUP BY p.id, p.jenjang
+            HAVING COUNT(a.id) > 0
         `, { type: QueryTypes.SELECT });
 
-        return result.map(item => ({
-            label: `Rata² ${item.jenjang}`,
-            value: parseFloat(item.avg_score || 0).toFixed(2)
-        }));
+        // Group by education level and calculate overall scores
+        const levelStats = {};
+        
+        for (const participant of participantData) {
+            const jenjang = participant.jenjang;
+            const assessments = participant.assessments;
+            
+            if (!levelStats[jenjang]) {
+                levelStats[jenjang] = {
+                    totalScore: 0,
+                    participantCount: 0
+                };
+            }
+            
+            try {
+                const scoreResult = scoringUtils.calculateParticipantScores(assessments);
+                const overallScore = parseFloat(scoreResult.overallScore || 0);
+                
+                levelStats[jenjang].totalScore += overallScore;
+                levelStats[jenjang].participantCount++;
+                
+            } catch (error) {
+                console.error(`Error calculating score for participant ${participant.participant_id}:`, error);
+                // Skip this participant if scoring fails
+            }
+        }
+
+        // Calculate averages and return formatted results
+        const result = Object.keys(levelStats)
+            .filter(jenjang => levelStats[jenjang].participantCount > 0)
+            .map(jenjang => {
+                const stats = levelStats[jenjang];
+                const avgScore = stats.totalScore / stats.participantCount;
+                
+                return {
+                    label: `Rata² ${jenjang}`,
+                    value: parseFloat(avgScore.toFixed(2))
+                };
+            })
+            .sort((a, b) => b.value - a.value);
+
+        return result;
     }
 
-    // Get province achievement data - OPTIMIZED with RAW SQL + LIMIT
-    // Uses idx_assessments_peserta_id for efficient JOIN
+    // Get province achievement data - CORRECTED to use calculated overall scores
     async getProvinceAchievementData() {
-        const result = await sequelize.query(`
-            SELECT
-                p.provinsi as name,
-                MIN(a.nilai)::numeric(10,2) as terendah,
-                MAX(a.nilai)::numeric(10,2) as tertinggi,
-                AVG(a.nilai)::numeric(10,2) as rata,
-                COUNT(DISTINCT p.id) as participant_count
+        const scoringUtils = require('../utils/scoring.utils');
+        
+        // Get participants grouped by province with their assessments
+        const participantData = await sequelize.query(`
+            SELECT 
+                p.id as participant_id,
+                p.provinsi,
+                json_agg(
+                    json_build_object(
+                        'huruf', a.huruf,
+                        'kategori', a.kategori,
+                        'nilai', a.nilai
+                    )
+                ) as assessments
             FROM participants p
             INNER JOIN assessments a ON p.id = a.peserta_id
-            WHERE p.provinsi IS NOT NULL
-            GROUP BY p.provinsi
-            HAVING COUNT(DISTINCT p.id) >= 10
-            ORDER BY rata DESC
-            LIMIT 50
+            WHERE p.provinsi IS NOT NULL AND p.status = 'SUDAH'
+            GROUP BY p.id, p.provinsi
+            HAVING COUNT(a.id) > 0
         `, { type: QueryTypes.SELECT });
 
-        return result.map(item => ({
-            name: item.name,
-            terendah: parseFloat(item.terendah || 0).toFixed(2),
-            tertinggi: parseFloat(item.tertinggi || 0).toFixed(2),
-            rata: parseFloat(item.rata || 0).toFixed(2)
-        }));
+        // Group by province and calculate overall scores
+        const provinceStats = {};
+        
+        for (const participant of participantData) {
+            const province = participant.provinsi;
+            const assessments = participant.assessments;
+            
+            if (!provinceStats[province]) {
+                provinceStats[province] = {
+                    name: province,
+                    scores: [],
+                    participantCount: 0
+                };
+            }
+            
+            try {
+                const scoreResult = scoringUtils.calculateParticipantScores(assessments);
+                const overallScore = parseFloat(scoreResult.overallScore || 0);
+                
+                provinceStats[province].scores.push(overallScore);
+                provinceStats[province].participantCount++;
+                
+            } catch (error) {
+                console.error(`Error calculating score for participant ${participant.participant_id}:`, error);
+                // Skip this participant if scoring fails
+            }
+        }
+
+        // Calculate statistics and format results
+        const result = Object.values(provinceStats)
+            .filter(province => province.participantCount >= 10) // At least 10 participants
+            .map(province => {
+                const scores = province.scores;
+                
+                if (scores.length === 0) {
+                    return {
+                        name: province.name,
+                        terendah: "0.00",
+                        tertinggi: "0.00", 
+                        rata: "0.00"
+                    };
+                }
+                
+                const min = Math.min(...scores);
+                const max = Math.max(...scores);
+                const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+                
+                return {
+                    name: province.name,
+                    terendah: parseFloat(min.toFixed(2)),
+                    tertinggi: parseFloat(max.toFixed(2)),
+                    rata: parseFloat(avg.toFixed(2))
+                };
+            })
+            .sort((a, b) => b.rata - a.rata) // Sort by average score descending
+            .slice(0, 50); // Limit to top 50 provinces
+
+        return result;
     }
 
-    // Get fluency level by province - OPTIMIZED with RAW SQL + LIMIT
-    // Uses idx_assessments_peserta_id for efficient JOIN
+    // Get fluency level by province - CORRECTED LOGIC
+    // IMPORTANT: This method now calculates OVERALL SCORES using the scoring system,
+    // not raw assessment values. Raw assessment 'nilai' represents ERROR COUNTS, not final scores.
     async getFluencyLevelByProvince() {
-        const result = await sequelize.query(`
-            SELECT
-                p.provinsi as name,
-                COUNT(CASE WHEN a.nilai >= 90 THEN 1 END) as lancar,
-                COUNT(CASE WHEN a.nilai >= 75 AND a.nilai < 90 THEN 1 END) as mahir,
-                COUNT(CASE WHEN a.nilai < 75 THEN 1 END) as kurang_lancar,
-                COUNT(DISTINCT p.id) as participant_count
+        const scoringUtils = require('../utils/scoring.utils');
+        
+        // First, get all participants with their assessments grouped by province
+        const participantData = await sequelize.query(`
+            SELECT 
+                p.id as participant_id,
+                p.provinsi,
+                json_agg(
+                    json_build_object(
+                        'huruf', a.huruf,
+                        'kategori', a.kategori,
+                        'nilai', a.nilai
+                    )
+                ) as assessments
             FROM participants p
             INNER JOIN assessments a ON p.id = a.peserta_id
-            WHERE p.provinsi IS NOT NULL
-            GROUP BY p.provinsi
-            HAVING COUNT(DISTINCT p.id) >= 10
-            ORDER BY lancar DESC
-            LIMIT 50
+            WHERE p.provinsi IS NOT NULL AND p.status = 'SUDAH'
+            GROUP BY p.id, p.provinsi
+            HAVING COUNT(a.id) > 0
         `, { type: QueryTypes.SELECT });
 
-        return result.map(item => ({
-            name: item.name,
-            lancar: parseInt(item.lancar || 0),
-            mahir: parseInt(item.mahir || 0),
-            kurang_lancar: parseInt(item.kurang_lancar || 0)
-        }));
+        // Calculate overall scores for each participant using the proper scoring system
+        const provinceStats = {};
+        
+        for (const participant of participantData) {
+            const province = participant.provinsi;
+            const assessments = participant.assessments;
+            
+            if (!provinceStats[province]) {
+                provinceStats[province] = {
+                    name: province,
+                    lancar: 0,        // >= 90 overall score
+                    mahir: 0,         // >= 75 and < 90 overall score  
+                    kurang_lancar: 0, // < 75 overall score
+                    total: 0
+                };
+            }
+            
+            // Calculate the participant's overall score using scoring system
+            try {
+                const scoreResult = scoringUtils.calculateParticipantScores(assessments);
+                const overallScore = parseFloat(scoreResult.overallScore || 0);
+                
+                // Categorize based on OVERALL SCORE (not raw assessment values)
+                if (overallScore >= 90) {
+                    provinceStats[province].lancar++;
+                } else if (overallScore >= 75) {
+                    provinceStats[province].mahir++;
+                } else {
+                    provinceStats[province].kurang_lancar++;
+                }
+                
+                provinceStats[province].total++;
+                
+            } catch (error) {
+                console.error(`Error calculating score for participant ${participant.participant_id}:`, error);
+                // Default to kurang_lancar if scoring fails
+                provinceStats[province].kurang_lancar++;
+                provinceStats[province].total++;
+            }
+        }
+
+        // Convert to array and filter provinces with meaningful data
+        const result = Object.values(provinceStats)
+            .filter(province => province.total >= 10) // At least 10 participants
+            .sort((a, b) => b.lancar - a.lancar) // Sort by 'lancar' count descending
+            .slice(0, 50); // Limit to top 50 provinces
+
+        return result;
     }
 
     // Get error statistics by category - OPTIMIZED with LIMIT
