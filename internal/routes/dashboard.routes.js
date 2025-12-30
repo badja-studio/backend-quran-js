@@ -51,6 +51,28 @@ router.get('/provinces',
     dashboardController.getProvinceData
 );
 
+// ============================================================================
+// NEW ROUTES FOR SCORE DISTRIBUTION FEATURE
+// ============================================================================
+
+// GET /api/dashboard/provinces-list - Get list of distinct provinces in database
+router.get('/provinces-list',
+    authMiddleware.authenticateToken,
+    dashboardController.getProvincesList
+);
+
+// GET /api/dashboard/score-distribution-by-level?provinsi={name}
+router.get('/score-distribution-by-level',
+    authMiddleware.authenticateToken,
+    dashboardController.getScoreDistributionByLevel
+);
+
+// GET /api/dashboard/score-distribution-by-subject?provinsi={name}
+router.get('/score-distribution-by-subject',
+    authMiddleware.authenticateToken,
+    dashboardController.getScoreDistributionBySubject
+);
+
 // POST /api/dashboard/clear-cache - Clear dashboard cache (admin only)
 router.post('/clear-cache',
     authMiddleware.authenticateToken,

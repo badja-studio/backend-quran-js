@@ -16,19 +16,20 @@ const { Participant, Assessor, Assessment } = require('../models');
  */
 class DashboardRepository {
     // Get total participants count - SAFE (uses COUNT only)
-    async getTotalParticipants() {
-        return await Participant.count();
+    async getTotalParticipants(provinsi = null) {
+        const whereClause = provinsi ? { provinsi } : {};
+        return await Participant.count({ where: whereClause });
     }
 
     // Get completed assessments count - SAFE (uses COUNT with WHERE)
-    async getCompletedAssessments() {
-        return await Participant.count({
-            where: { status: 'SUDAH' }
-        });
+    async getCompletedAssessments(provinsi = null) {
+        const whereClause = provinsi ? { provinsi, status: 'SUDAH' } : { status: 'SUDAH' };
+        return await Participant.count({ where: whereClause });
     }
 
-    // Get total assessors count - SAFE
-    async getTotalAssessors() {
+    // Get total assessors count - SAFE (no province filtering)
+    async getTotalAssessors(provinsi = null) {
+        // Assessors are not filtered by province
         return await Assessor.count();
     }
 
@@ -36,8 +37,10 @@ class DashboardRepository {
     // IMPORTANT: This now calculates proper overall scores using the scoring system,
     // not raw assessment values which represent error counts
     // OPTIMIZED: Increased LIMIT and added sampling for better performance
-    async getAverageScore() {
+    async getAverageScore(provinsi = null) {
         const scoringUtils = require('../utils/scoring.utils');
+
+        const provinceFilter = provinsi ? 'AND p.provinsi = :provinsi' : '';
 
         // Get sample of participants with completed assessments (increased to 5000 for better accuracy)
         // Uses TABLESAMPLE for faster sampling on large datasets
@@ -53,12 +56,15 @@ class DashboardRepository {
                 ) as assessments
             FROM participants p
             INNER JOIN assessments a ON p.id = a.peserta_id
-            WHERE p.status = 'SUDAH'
+            WHERE p.status = 'SUDAH' ${provinceFilter}
             GROUP BY p.id
             HAVING COUNT(a.id) > 0
             ORDER BY p.id DESC
             LIMIT 5000
-        `, { type: QueryTypes.SELECT });
+        `, {
+            replacements: { provinsi },
+            type: QueryTypes.SELECT
+        });
 
         if (participantData.length === 0) {
             return 0;
@@ -92,14 +98,16 @@ class DashboardRepository {
     }
 
     // Get participation by education level - SAFE (GROUP BY on indexed column)
-    async getParticipationByEducationLevel() {
+    async getParticipationByEducationLevel(provinsi = null) {
         // Uses idx_participants_jenjang index
+        const whereClause = provinsi ? { provinsi } : {};
         const result = await Participant.findAll({
             attributes: [
                 'jenjang',
                 [Sequelize.fn('COUNT', Sequelize.col('id')), 'total'],
                 [Sequelize.fn('SUM', Sequelize.literal("CASE WHEN status = 'SUDAH' THEN 1 ELSE 0 END")), 'completed']
             ],
+            where: whereClause,
             group: ['jenjang'],
             raw: true
         });
@@ -112,20 +120,25 @@ class DashboardRepository {
     }
 
     // Get participation by province - OPTIMIZED with LIMIT and RAW SQL
-    async getParticipationByProvince() {
+    async getParticipationByProvince(provinsi = null) {
         // Uses idx_participants_provinsi index
         // LIMIT 50 prevents memory issues with thousands of provinces
+        // When provinsi is specified, keeps province-level aggregation (doesn't break down by city)
+        const provinceFilter = provinsi ? 'AND provinsi = :provinsi' : '';
         const result = await sequelize.query(`
             SELECT
                 provinsi as name,
                 COUNT(*) as registered,
                 COUNT(CASE WHEN status = 'SUDAH' THEN 1 END) as participated
             FROM participants
-            WHERE provinsi IS NOT NULL
+            WHERE provinsi IS NOT NULL ${provinceFilter}
             GROUP BY provinsi
             ORDER BY participated DESC
             LIMIT 50
-        `, { type: QueryTypes.SELECT });
+        `, {
+            replacements: { provinsi },
+            type: QueryTypes.SELECT
+        });
 
         return result.map(item => ({
             name: item.name,
@@ -135,13 +148,15 @@ class DashboardRepository {
     }
 
     // Get gender distribution - SAFE (simple GROUP BY)
-    async getGenderDistribution() {
+    async getGenderDistribution(provinsi = null) {
         // Uses idx_participants_jenis_kelamin index
+        const whereClause = provinsi ? { provinsi } : {};
         const result = await Participant.findAll({
             attributes: [
                 'jenis_kelamin',
                 [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
             ],
+            where: whereClause,
             group: ['jenis_kelamin'],
             raw: true
         });
@@ -153,12 +168,14 @@ class DashboardRepository {
     }
 
     // Get employee status distribution - SAFE
-    async getEmployeeStatusDistribution() {
+    async getEmployeeStatusDistribution(provinsi = null) {
+        const whereClause = provinsi ? { provinsi } : {};
         const result = await Participant.findAll({
             attributes: [
                 [Sequelize.literal("CASE WHEN LENGTH(nip) = 18 THEN 'PNS' ELSE 'Non-PNS' END"), 'status'],
                 [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
             ],
+            where: whereClause,
             group: [Sequelize.literal("CASE WHEN LENGTH(nip) = 18 THEN 'PNS' ELSE 'Non-PNS' END")],
             raw: true
         });
@@ -170,16 +187,17 @@ class DashboardRepository {
     }
 
     // Get institution type distribution - SAFE
-    async getInstitutionTypeDistribution() {
+    async getInstitutionTypeDistribution(provinsi = null) {
         // Uses idx_participants_jenis_pt index
+        const whereClause = provinsi
+            ? { provinsi, jenis_pt: { [Op.not]: null } }
+            : { jenis_pt: { [Op.not]: null } };
         const result = await Participant.findAll({
             attributes: [
                 'jenis_pt',
                 [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
             ],
-            where: {
-                jenis_pt: { [Op.not]: null }
-            },
+            where: whereClause,
             group: ['jenis_pt'],
             raw: true
         });
@@ -192,8 +210,10 @@ class DashboardRepository {
 
     // Get average scores by education level - CORRECTED to use calculated overall scores
     // OPTIMIZED: Added LIMIT to prevent loading all records
-    async getAverageScoresByEducationLevel() {
+    async getAverageScoresByEducationLevel(provinsi = null) {
         const scoringUtils = require('../utils/scoring.utils');
+
+        const provinceFilter = provinsi ? 'AND p.provinsi = :provinsi' : '';
 
         // Get participants grouped by education level with their assessments
         // LIMIT to 10,000 most recent participants for performance
@@ -210,12 +230,15 @@ class DashboardRepository {
                 ) as assessments
             FROM participants p
             INNER JOIN assessments a ON p.id = a.peserta_id
-            WHERE p.jenjang IS NOT NULL AND p.status = 'SUDAH'
+            WHERE p.jenjang IS NOT NULL AND p.status = 'SUDAH' ${provinceFilter}
             GROUP BY p.id, p.jenjang
             HAVING COUNT(a.id) > 0
             ORDER BY p.id DESC
             LIMIT 10000
-        `, { type: QueryTypes.SELECT });
+        `, {
+            replacements: { provinsi },
+            type: QueryTypes.SELECT
+        });
 
         // Group by education level and calculate overall scores
         const levelStats = {};
@@ -263,8 +286,10 @@ class DashboardRepository {
 
     // Get province achievement data - CORRECTED to use calculated overall scores
     // OPTIMIZED: Added LIMIT to prevent loading all records
-    async getProvinceAchievementData() {
+    async getProvinceAchievementData(provinsi = null) {
         const scoringUtils = require('../utils/scoring.utils');
+
+        const provinceFilter = provinsi ? 'AND p.provinsi = :provinsi' : '';
 
         // Get participants grouped by province with their assessments
         // LIMIT to 15,000 most recent participants for performance
@@ -281,12 +306,15 @@ class DashboardRepository {
                 ) as assessments
             FROM participants p
             INNER JOIN assessments a ON p.id = a.peserta_id
-            WHERE p.provinsi IS NOT NULL AND p.status = 'SUDAH'
+            WHERE p.provinsi IS NOT NULL AND p.status = 'SUDAH' ${provinceFilter}
             GROUP BY p.id, p.provinsi
             HAVING COUNT(a.id) > 0
             ORDER BY p.id DESC
             LIMIT 15000
-        `, { type: QueryTypes.SELECT });
+        `, {
+            replacements: { provinsi },
+            type: QueryTypes.SELECT
+        });
 
         // Group by province and calculate overall scores
         const provinceStats = {};
@@ -352,8 +380,10 @@ class DashboardRepository {
     // IMPORTANT: This method now calculates OVERALL SCORES using the scoring system,
     // not raw assessment values. Raw assessment 'nilai' represents ERROR COUNTS, not final scores.
     // OPTIMIZED: Added LIMIT to prevent loading all records
-    async getFluencyLevelByProvince() {
+    async getFluencyLevelByProvince(provinsi = null) {
         const scoringUtils = require('../utils/scoring.utils');
+
+        const provinceFilter = provinsi ? 'AND p.provinsi = :provinsi' : '';
 
         // First, get participants with their assessments grouped by province
         // LIMIT to 15,000 most recent participants for performance
@@ -370,12 +400,15 @@ class DashboardRepository {
                 ) as assessments
             FROM participants p
             INNER JOIN assessments a ON p.id = a.peserta_id
-            WHERE p.provinsi IS NOT NULL AND p.status = 'SUDAH'
+            WHERE p.provinsi IS NOT NULL AND p.status = 'SUDAH' ${provinceFilter}
             GROUP BY p.id, p.provinsi
             HAVING COUNT(a.id) > 0
             ORDER BY p.id DESC
             LIMIT 15000
-        `, { type: QueryTypes.SELECT });
+        `, {
+            replacements: { provinsi },
+            type: QueryTypes.SELECT
+        });
 
         // Calculate overall scores for each participant using the proper scoring system
         const provinceStats = {};
@@ -429,19 +462,24 @@ class DashboardRepository {
 
     // Get error statistics by category - OPTIMIZED with LIMIT
     // Uses idx_assessments_kategori_huruf index
-    async getErrorStatisticsByCategory(category) {
+    async getErrorStatisticsByCategory(category, provinsi = null) {
+        const provinceFilter = provinsi
+            ? 'AND a.peserta_id IN (SELECT id FROM participants WHERE provinsi = :provinsi)'
+            : '';
+
         const result = await sequelize.query(`
             SELECT
-                huruf as name,
+                a.huruf as name,
                 COUNT(*) as total
-            FROM assessments
-            WHERE kategori ILIKE :category
-                AND nilai < 100
-            GROUP BY huruf
+            FROM assessments a
+            WHERE a.kategori ILIKE :category
+                AND a.nilai < 100
+                ${provinceFilter}
+            GROUP BY a.huruf
             ORDER BY total DESC
             LIMIT 10
         `, {
-            replacements: { category: `%${category}%` },
+            replacements: { category: `%${category}%`, provinsi },
             type: QueryTypes.SELECT
         });
 
@@ -457,6 +495,143 @@ class DashboardRepository {
             { name: 'Kelebihan Waktu', total: 0.28 },
             { name: 'Tidak Bisa Membaca', total: 0.12 }
         ];
+    }
+
+    // ============================================================================
+    // NEW METHODS FOR SCORE DISTRIBUTION FEATURE
+    // ============================================================================
+
+    // Get list of distinct provinces that exist in database
+    async getProvincesList() {
+        const result = await sequelize.query(`
+            SELECT DISTINCT provinsi
+            FROM participants
+            WHERE provinsi IS NOT NULL AND provinsi != ''
+            ORDER BY provinsi ASC
+        `, { type: QueryTypes.SELECT });
+
+        return result.map(row => row.provinsi);
+    }
+
+    // Get score distribution by education level (jenjang)
+    async getScoreDistributionByLevel(provinsi = null) {
+        const scoringUtils = require('../utils/scoring.utils');
+        const provinceFilter = provinsi ? 'AND p.provinsi = :provinsi' : '';
+
+        // Fetch participants with assessments (LIMIT 15000)
+        const participantData = await sequelize.query(`
+            SELECT p.id as participant_id, p.jenjang,
+                json_agg(json_build_object('huruf', a.huruf, 'kategori', a.kategori, 'nilai', a.nilai)) as assessments
+            FROM participants p
+            INNER JOIN assessments a ON p.id = a.peserta_id
+            WHERE p.jenjang IS NOT NULL AND p.status = 'SUDAH' ${provinceFilter}
+            GROUP BY p.id, p.jenjang
+            HAVING COUNT(a.id) > 0
+            ORDER BY p.id DESC
+            LIMIT 15000
+        `, {
+            replacements: { provinsi },
+            type: QueryTypes.SELECT
+        });
+
+        // Initialize stats for RA, MI, MTS, MA
+        const levelStats = {
+            'RA': { jml_0_59: 0, jml_60_89: 0, jml_90_100: 0, total: 0 },
+            'MI': { jml_0_59: 0, jml_60_89: 0, jml_90_100: 0, total: 0 },
+            'MTS': { jml_0_59: 0, jml_60_89: 0, jml_90_100: 0, total: 0 },
+            'MA': { jml_0_59: 0, jml_60_89: 0, jml_90_100: 0, total: 0 }
+        };
+
+        // Calculate scores and categorize
+        for (const participant of participantData) {
+            const jenjang = participant.jenjang.toUpperCase();
+            if (!levelStats[jenjang]) continue;
+
+            try {
+                const scoreResult = scoringUtils.calculateParticipantScores(participant.assessments);
+                const overallScore = parseFloat(scoreResult.overallScore || 0);
+
+                levelStats[jenjang].total++;
+                if (overallScore >= 90) {
+                    levelStats[jenjang].jml_90_100++;
+                } else if (overallScore >= 60) {
+                    levelStats[jenjang].jml_60_89++;
+                } else {
+                    levelStats[jenjang].jml_0_59++;
+                }
+            } catch (error) {
+                console.error(`Error calculating score for participant ${participant.participant_id}:`, error);
+                // Default to kurang_lancar on error
+                levelStats[jenjang].jml_0_59++;
+                levelStats[jenjang].total++;
+            }
+        }
+
+        // Return as array
+        return Object.keys(levelStats)
+            .map(tingkat => ({ tingkat, ...levelStats[tingkat] }))
+            .filter(item => item.total > 0);
+    }
+
+    // Get score distribution by subject (mata_pelajaran)
+    async getScoreDistributionBySubject(provinsi = null) {
+        const scoringUtils = require('../utils/scoring.utils');
+        const provinceFilter = provinsi ? 'AND p.provinsi = :provinsi' : '';
+
+        // Fetch participants with assessments (LIMIT 15000)
+        const participantData = await sequelize.query(`
+            SELECT p.id as participant_id, p.mata_pelajaran,
+                json_agg(json_build_object('huruf', a.huruf, 'kategori', a.kategori, 'nilai', a.nilai)) as assessments
+            FROM participants p
+            INNER JOIN assessments a ON p.id = a.peserta_id
+            WHERE p.mata_pelajaran IS NOT NULL AND p.status = 'SUDAH' ${provinceFilter}
+            GROUP BY p.id, p.mata_pelajaran
+            HAVING COUNT(a.id) > 0
+            ORDER BY p.id DESC
+            LIMIT 15000
+        `, {
+            replacements: { provinsi },
+            type: QueryTypes.SELECT
+        });
+
+        // Group by subject
+        const subjectStats = {};
+
+        for (const participant of participantData) {
+            const subject = participant.mata_pelajaran;
+            if (!subjectStats[subject]) {
+                subjectStats[subject] = {
+                    mata_pelajaran: subject,
+                    jml_0_59: 0,
+                    jml_60_89: 0,
+                    jml_90_100: 0,
+                    total_peserta: 0
+                };
+            }
+
+            try {
+                const scoreResult = scoringUtils.calculateParticipantScores(participant.assessments);
+                const overallScore = parseFloat(scoreResult.overallScore || 0);
+
+                subjectStats[subject].total_peserta++;
+                if (overallScore >= 90) {
+                    subjectStats[subject].jml_90_100++;
+                } else if (overallScore >= 60) {
+                    subjectStats[subject].jml_60_89++;
+                } else {
+                    subjectStats[subject].jml_0_59++;
+                }
+            } catch (error) {
+                console.error(`Error calculating score for participant ${participant.participant_id}:`, error);
+                // Default to kurang_lancar on error
+                subjectStats[subject].jml_0_59++;
+                subjectStats[subject].total_peserta++;
+            }
+        }
+
+        // Return sorted by total participants
+        return Object.values(subjectStats)
+            .sort((a, b) => b.total_peserta - a.total_peserta);
     }
 }
 
