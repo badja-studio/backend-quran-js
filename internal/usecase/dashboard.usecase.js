@@ -8,13 +8,13 @@ const dashboardRepository = require('../repository/dashboard.repository');
  */
 class DashboardUseCase {
     // Get basic statistics - OPTIMIZED with parallel execution
-    async getBasicStatistics() {
+    async getBasicStatistics(provinsi = null) {
         // Run all independent queries in parallel for faster response
         const [totalParticipants, completedAssessments, totalAssessors, avgScore] = await Promise.all([
-            dashboardRepository.getTotalParticipants(),
-            dashboardRepository.getCompletedAssessments(),
-            dashboardRepository.getTotalAssessors(),
-            dashboardRepository.getAverageScore()
+            dashboardRepository.getTotalParticipants(provinsi),
+            dashboardRepository.getCompletedAssessments(provinsi),
+            dashboardRepository.getTotalAssessors(provinsi),
+            dashboardRepository.getAverageScore(provinsi)
         ]);
 
         return {
@@ -26,10 +26,10 @@ class DashboardUseCase {
     }
 
     // Get participation stats - OPTIMIZED with parallel execution
-    async getParticipationStats() {
+    async getParticipationStats(provinsi = null) {
         const [byEducationLevel, byProvince] = await Promise.all([
-            dashboardRepository.getParticipationByEducationLevel(),
-            dashboardRepository.getParticipationByProvince()
+            dashboardRepository.getParticipationByEducationLevel(provinsi),
+            dashboardRepository.getParticipationByProvince(provinsi)
         ]);
 
         return {
@@ -39,11 +39,11 @@ class DashboardUseCase {
     }
 
     // Get demographic data - OPTIMIZED with parallel execution
-    async getDemographicData() {
+    async getDemographicData(provinsi = null) {
         const [gender, employeeStatus, institutionType] = await Promise.all([
-            dashboardRepository.getGenderDistribution(),
-            dashboardRepository.getEmployeeStatusDistribution(),
-            dashboardRepository.getInstitutionTypeDistribution()
+            dashboardRepository.getGenderDistribution(provinsi),
+            dashboardRepository.getEmployeeStatusDistribution(provinsi),
+            dashboardRepository.getInstitutionTypeDistribution(provinsi)
         ]);
 
         return {
@@ -54,11 +54,11 @@ class DashboardUseCase {
     }
 
     // Get performance analytics - OPTIMIZED with parallel execution
-    async getPerformanceAnalytics() {
+    async getPerformanceAnalytics(provinsi = null) {
         const [averageScores, provinceAchievement, fluencyLevels] = await Promise.all([
-            dashboardRepository.getAverageScoresByEducationLevel(),
-            dashboardRepository.getProvinceAchievementData(),
-            dashboardRepository.getFluencyLevelByProvince()
+            dashboardRepository.getAverageScoresByEducationLevel(provinsi),
+            dashboardRepository.getProvinceAchievementData(provinsi),
+            dashboardRepository.getFluencyLevelByProvince(provinsi)
         ]);
 
         return {
@@ -69,12 +69,12 @@ class DashboardUseCase {
     }
 
     // Get error analysis - OPTIMIZED with parallel execution
-    async getErrorAnalysis() {
+    async getErrorAnalysis(provinsi = null) {
         const [makharij, sifat, ahkam, mad, penalties] = await Promise.all([
-            dashboardRepository.getErrorStatisticsByCategory('makharij'),
-            dashboardRepository.getErrorStatisticsByCategory('sifat'),
-            dashboardRepository.getErrorStatisticsByCategory('ahkam'),
-            dashboardRepository.getErrorStatisticsByCategory('mad'),
+            dashboardRepository.getErrorStatisticsByCategory('makharij', provinsi),
+            dashboardRepository.getErrorStatisticsByCategory('sifat', provinsi),
+            dashboardRepository.getErrorStatisticsByCategory('ahkam', provinsi),
+            dashboardRepository.getErrorStatisticsByCategory('mad', provinsi),
             dashboardRepository.getPenaltyStatistics()
         ]);
 
@@ -88,11 +88,11 @@ class DashboardUseCase {
     }
 
     // Get province data - OPTIMIZED with parallel execution
-    async getProvinceData() {
+    async getProvinceData(provinsi = null) {
         const [participation, achievement, fluency] = await Promise.all([
-            dashboardRepository.getParticipationByProvince(),
-            dashboardRepository.getProvinceAchievementData(),
-            dashboardRepository.getFluencyLevelByProvince()
+            dashboardRepository.getParticipationByProvince(provinsi),
+            dashboardRepository.getProvinceAchievementData(provinsi),
+            dashboardRepository.getFluencyLevelByProvince(provinsi)
         ]);
 
         return {
@@ -103,7 +103,7 @@ class DashboardUseCase {
     }
 
     // Get comprehensive dashboard overview - OPTIMIZED with parallel execution
-    async getDashboardOverview() {
+    async getDashboardOverview(provinsi = null) {
         // Run all independent queries in parallel for maximum performance
         const [
             totalParticipants,
@@ -117,16 +117,16 @@ class DashboardUseCase {
             institutionType,
             averageScores
         ] = await Promise.all([
-            dashboardRepository.getTotalParticipants(),
-            dashboardRepository.getCompletedAssessments(),
-            dashboardRepository.getTotalAssessors(),
-            dashboardRepository.getAverageScore(),
-            dashboardRepository.getParticipationByEducationLevel(),
-            dashboardRepository.getParticipationByProvince(),
-            dashboardRepository.getGenderDistribution(),
-            dashboardRepository.getEmployeeStatusDistribution(),
-            dashboardRepository.getInstitutionTypeDistribution(),
-            dashboardRepository.getAverageScoresByEducationLevel()
+            dashboardRepository.getTotalParticipants(provinsi),
+            dashboardRepository.getCompletedAssessments(provinsi),
+            dashboardRepository.getTotalAssessors(provinsi),
+            dashboardRepository.getAverageScore(provinsi),
+            dashboardRepository.getParticipationByEducationLevel(provinsi),
+            dashboardRepository.getParticipationByProvince(provinsi),
+            dashboardRepository.getGenderDistribution(provinsi),
+            dashboardRepository.getEmployeeStatusDistribution(provinsi),
+            dashboardRepository.getInstitutionTypeDistribution(provinsi),
+            dashboardRepository.getAverageScoresByEducationLevel(provinsi)
         ]);
 
         return {
@@ -145,6 +145,25 @@ class DashboardUseCase {
             },
             averageScores
         };
+    }
+
+    // ============================================================================
+    // NEW METHODS FOR SCORE DISTRIBUTION FEATURE
+    // ============================================================================
+
+    // Get list of distinct provinces
+    async getProvincesList() {
+        return await dashboardRepository.getProvincesList();
+    }
+
+    // Get score distribution by education level
+    async getScoreDistributionByLevel(provinsi = null) {
+        return await dashboardRepository.getScoreDistributionByLevel(provinsi);
+    }
+
+    // Get score distribution by subject
+    async getScoreDistributionBySubject(provinsi = null) {
+        return await dashboardRepository.getScoreDistributionBySubject(provinsi);
     }
 }
 

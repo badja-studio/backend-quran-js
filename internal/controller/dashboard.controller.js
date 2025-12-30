@@ -29,12 +29,17 @@ async function getCachedData(key, fetchFunction) {
 }
 
 class DashboardController {
-    // GET /api/dashboard/overview
+    // GET /api/dashboard/overview?provinsi={name}
     async getDashboardOverview(req, res) {
         try {
+            const provinsi = req.query.provinsi || null;
+            const cacheKey = provinsi
+                ? `dashboard:overview:${provinsi.toUpperCase().replace(/\s+/g, '_')}`
+                : 'dashboard:overview';
+
             const data = await getCachedData(
-                'dashboard:overview',
-                () => dashboardUseCase.getDashboardOverview()
+                cacheKey,
+                () => dashboardUseCase.getDashboardOverview(provinsi)
             );
 
             res.status(200).json({
@@ -51,12 +56,17 @@ class DashboardController {
         }
     }
 
-    // GET /api/dashboard/statistics
+    // GET /api/dashboard/statistics?provinsi={name}
     async getBasicStatistics(req, res) {
         try {
+            const provinsi = req.query.provinsi || null;
+            const cacheKey = provinsi
+                ? `dashboard:statistics:${provinsi.toUpperCase().replace(/\s+/g, '_')}`
+                : 'dashboard:statistics';
+
             const data = await getCachedData(
-                'dashboard:statistics',
-                () => dashboardUseCase.getBasicStatistics()
+                cacheKey,
+                () => dashboardUseCase.getBasicStatistics(provinsi)
             );
 
             res.status(200).json({
@@ -73,12 +83,17 @@ class DashboardController {
         }
     }
 
-    // GET /api/dashboard/participation
+    // GET /api/dashboard/participation?provinsi={name}
     async getParticipationStats(req, res) {
         try {
+            const provinsi = req.query.provinsi || null;
+            const cacheKey = provinsi
+                ? `dashboard:participation:${provinsi.toUpperCase().replace(/\s+/g, '_')}`
+                : 'dashboard:participation';
+
             const data = await getCachedData(
-                'dashboard:participation',
-                () => dashboardUseCase.getParticipationStats()
+                cacheKey,
+                () => dashboardUseCase.getParticipationStats(provinsi)
             );
 
             res.status(200).json({
@@ -95,12 +110,17 @@ class DashboardController {
         }
     }
 
-    // GET /api/dashboard/demographics
+    // GET /api/dashboard/demographics?provinsi={name}
     async getDemographicData(req, res) {
         try {
+            const provinsi = req.query.provinsi || null;
+            const cacheKey = provinsi
+                ? `dashboard:demographics:${provinsi.toUpperCase().replace(/\s+/g, '_')}`
+                : 'dashboard:demographics';
+
             const data = await getCachedData(
-                'dashboard:demographics',
-                () => dashboardUseCase.getDemographicData()
+                cacheKey,
+                () => dashboardUseCase.getDemographicData(provinsi)
             );
 
             res.status(200).json({
@@ -117,12 +137,17 @@ class DashboardController {
         }
     }
 
-    // GET /api/dashboard/performance
+    // GET /api/dashboard/performance?provinsi={name}
     async getPerformanceAnalytics(req, res) {
         try {
+            const provinsi = req.query.provinsi || null;
+            const cacheKey = provinsi
+                ? `dashboard:performance:${provinsi.toUpperCase().replace(/\s+/g, '_')}`
+                : 'dashboard:performance';
+
             const data = await getCachedData(
-                'dashboard:performance',
-                () => dashboardUseCase.getPerformanceAnalytics()
+                cacheKey,
+                () => dashboardUseCase.getPerformanceAnalytics(provinsi)
             );
 
             res.status(200).json({
@@ -139,12 +164,17 @@ class DashboardController {
         }
     }
 
-    // GET /api/dashboard/errors
+    // GET /api/dashboard/errors?provinsi={name}
     async getErrorAnalysis(req, res) {
         try {
+            const provinsi = req.query.provinsi || null;
+            const cacheKey = provinsi
+                ? `dashboard:errors:${provinsi.toUpperCase().replace(/\s+/g, '_')}`
+                : 'dashboard:errors';
+
             const data = await getCachedData(
-                'dashboard:errors',
-                () => dashboardUseCase.getErrorAnalysis()
+                cacheKey,
+                () => dashboardUseCase.getErrorAnalysis(provinsi)
             );
 
             res.status(200).json({
@@ -161,12 +191,17 @@ class DashboardController {
         }
     }
 
-    // GET /api/dashboard/provinces
+    // GET /api/dashboard/provinces?provinsi={name}
     async getProvinceData(req, res) {
         try {
+            const provinsi = req.query.provinsi || null;
+            const cacheKey = provinsi
+                ? `dashboard:provinces:${provinsi.toUpperCase().replace(/\s+/g, '_')}`
+                : 'dashboard:provinces';
+
             const data = await getCachedData(
-                'dashboard:provinces',
-                () => dashboardUseCase.getProvinceData()
+                cacheKey,
+                () => dashboardUseCase.getProvinceData(provinsi)
             );
 
             res.status(200).json({
@@ -179,6 +214,88 @@ class DashboardController {
             res.status(500).json({
                 success: false,
                 message: error.message || 'Failed to retrieve province data'
+            });
+        }
+    }
+
+    // ============================================================================
+    // NEW ENDPOINTS FOR SCORE DISTRIBUTION FEATURE
+    // ============================================================================
+
+    // GET /api/dashboard/provinces-list
+    async getProvincesList(req, res) {
+        try {
+            const cacheKey = 'dashboard:provinces-list';
+
+            const data = await getCachedData(
+                cacheKey,
+                () => dashboardUseCase.getProvincesList()
+            );
+
+            res.status(200).json({
+                success: true,
+                message: 'Provinces list retrieved successfully',
+                data
+            });
+        } catch (error) {
+            console.error('Error in getProvincesList:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Failed to retrieve provinces list'
+            });
+        }
+    }
+
+    // GET /api/dashboard/score-distribution-by-level?provinsi={name}
+    async getScoreDistributionByLevel(req, res) {
+        try {
+            const provinsi = req.query.provinsi || null;
+            const cacheKey = provinsi
+                ? `dashboard:score-dist-level:${provinsi.toUpperCase().replace(/\s+/g, '_')}`
+                : 'dashboard:score-dist-level';
+
+            const data = await getCachedData(
+                cacheKey,
+                () => dashboardUseCase.getScoreDistributionByLevel(provinsi)
+            );
+
+            res.status(200).json({
+                success: true,
+                message: 'Score distribution by level retrieved successfully',
+                data
+            });
+        } catch (error) {
+            console.error('Error in getScoreDistributionByLevel:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Failed to retrieve score distribution by level'
+            });
+        }
+    }
+
+    // GET /api/dashboard/score-distribution-by-subject?provinsi={name}
+    async getScoreDistributionBySubject(req, res) {
+        try {
+            const provinsi = req.query.provinsi || null;
+            const cacheKey = provinsi
+                ? `dashboard:score-dist-subject:${provinsi.toUpperCase().replace(/\s+/g, '_')}`
+                : 'dashboard:score-dist-subject';
+
+            const data = await getCachedData(
+                cacheKey,
+                () => dashboardUseCase.getScoreDistributionBySubject(provinsi)
+            );
+
+            res.status(200).json({
+                success: true,
+                message: 'Score distribution by subject retrieved successfully',
+                data
+            });
+        } catch (error) {
+            console.error('Error in getScoreDistributionBySubject:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Failed to retrieve score distribution by subject'
             });
         }
     }
