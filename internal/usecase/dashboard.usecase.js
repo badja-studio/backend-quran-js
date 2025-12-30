@@ -70,19 +70,23 @@ class DashboardUseCase {
 
     // Get error analysis - OPTIMIZED with parallel execution
     async getErrorAnalysis(provinsi = null) {
-        const [makharij, sifat, ahkam, mad, penalties] = await Promise.all([
-            dashboardRepository.getErrorStatisticsByCategory('makharij', provinsi),
+        const [makhraj, sifat, ahkam, mad, gharib, kelancaran, penalties] = await Promise.all([
+            dashboardRepository.getErrorStatisticsByCategory('makhraj', provinsi),
             dashboardRepository.getErrorStatisticsByCategory('sifat', provinsi),
             dashboardRepository.getErrorStatisticsByCategory('ahkam', provinsi),
             dashboardRepository.getErrorStatisticsByCategory('mad', provinsi),
-            dashboardRepository.getPenaltyStatistics()
+            dashboardRepository.getErrorStatisticsByCategory('gharib', provinsi),
+            dashboardRepository.getErrorStatisticsByCategory('kelancaran', provinsi),
+            dashboardRepository.getPenaltyStatistics(provinsi)
         ]);
 
         return {
-            makharij,
+            makhraj,
             sifat,
             ahkam,
             mad,
+            gharib,
+            kelancaran,
             penalties
         };
     }

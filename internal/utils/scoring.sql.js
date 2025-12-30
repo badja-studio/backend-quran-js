@@ -355,8 +355,8 @@ fluency_categorized AS (
         p.provinsi,
         COUNT(*) as total,
         COUNT(CASE WHEN ps.overall_score >= 90 THEN 1 END) as mahir,
-        COUNT(CASE WHEN ps.overall_score >= 75 AND ps.overall_score < 90 THEN 1 END) as lancar,
-        COUNT(CASE WHEN ps.overall_score < 75 THEN 1 END) as kurang_lancar
+        COUNT(CASE WHEN ps.overall_score >= 60 AND ps.overall_score < 90 THEN 1 END) as lancar,
+        COUNT(CASE WHEN ps.overall_score < 60 THEN 1 END) as kurang_lancar
     FROM participant_scores ps
     JOIN participants p ON p.id = ps.peserta_id
     WHERE p.provinsi IS NOT NULL

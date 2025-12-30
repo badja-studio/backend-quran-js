@@ -420,23 +420,23 @@ class DashboardRepository {
             if (!provinceStats[province]) {
                 provinceStats[province] = {
                     name: province,
-                    lancar: 0,        // >= 90 overall score
-                    mahir: 0,         // >= 75 and < 90 overall score  
-                    kurang_lancar: 0, // < 75 overall score
+                    mahir: 0,         // >= 90 overall score
+                    lancar: 0,        // >= 60 and < 90 overall score
+                    kurang_lancar: 0, // < 60 overall score
                     total: 0
                 };
             }
-            
+
             // Calculate the participant's overall score using scoring system
             try {
                 const scoreResult = scoringUtils.calculateParticipantScores(assessments);
                 const overallScore = parseFloat(scoreResult.overallScore || 0);
-                
+
                 // Categorize based on OVERALL SCORE (not raw assessment values)
                 if (overallScore >= 90) {
-                    provinceStats[province].lancar++;
-                } else if (overallScore >= 75) {
                     provinceStats[province].mahir++;
+                } else if (overallScore >= 60) {
+                    provinceStats[province].lancar++;
                 } else {
                     provinceStats[province].kurang_lancar++;
                 }
@@ -489,12 +489,32 @@ class DashboardRepository {
         }));
     }
 
-    // Get penalty statistics
-    async getPenaltyStatistics() {
-        return [
-            { name: 'Kelebihan Waktu', total: 0.28 },
-            { name: 'Tidak Bisa Membaca', total: 0.12 }
-        ];
+    // Get penalty statistics - Query from database
+    async getPenaltyStatistics(provinsi = null) {
+        const provinceFilter = provinsi
+            ? 'AND a.peserta_id IN (SELECT id FROM participants WHERE provinsi = :provinsi)'
+            : '';
+
+        const result = await sequelize.query(`
+            SELECT
+                a.huruf as name,
+                COUNT(*) as total
+            FROM assessments a
+            WHERE (a.kategori ILIKE '%pengurangan%' OR a.kategori ILIKE '%penalty%')
+                AND a.nilai > 0
+                ${provinceFilter}
+            GROUP BY a.huruf
+            ORDER BY total DESC
+            LIMIT 10
+        `, {
+            replacements: { provinsi },
+            type: QueryTypes.SELECT
+        });
+
+        return result.map(item => ({
+            name: item.name || 'Unknown',
+            total: parseInt(item.total)
+        }));
     }
 
     // ============================================================================
