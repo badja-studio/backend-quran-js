@@ -599,13 +599,22 @@ class DashboardRepository {
         const provinceFilter = provinsi ? 'AND p.provinsi = :provinsi' : '';
 
         // Fetch participants with assessments (LIMIT 15000)
+        // Use COALESCE to handle NULL mata_pelajaran - fallback to level, then jabatan, then jenjang, then 'Lainnya'
         const participantData = await sequelize.query(`
-            SELECT p.id as participant_id, p.mata_pelajaran,
+            SELECT
+                p.id as participant_id,
+                COALESCE(
+                    NULLIF(TRIM(p.mata_pelajaran), ''),
+                    NULLIF(TRIM(p.level), ''),
+                    NULLIF(TRIM(p.jabatan), ''),
+                    NULLIF(TRIM(p.jenjang), ''),
+                    'Lainnya'
+                ) as mata_pelajaran,
                 json_agg(json_build_object('huruf', a.huruf, 'kategori', a.kategori, 'nilai', a.nilai)) as assessments
             FROM participants p
             INNER JOIN assessments a ON p.id = a.peserta_id
-            WHERE p.mata_pelajaran IS NOT NULL AND p.status = 'SUDAH' ${provinceFilter}
-            GROUP BY p.id, p.mata_pelajaran
+            WHERE p.status = 'SUDAH' ${provinceFilter}
+            GROUP BY p.id, mata_pelajaran
             HAVING COUNT(a.id) > 0
             ORDER BY p.id DESC
             LIMIT 15000
@@ -618,7 +627,7 @@ class DashboardRepository {
         const subjectStats = {};
 
         for (const participant of participantData) {
-            const subject = participant.mata_pelajaran;
+            const subject = participant.mata_pelajaran || 'Lainnya';
             if (!subjectStats[subject]) {
                 subjectStats[subject] = {
                     mata_pelajaran: subject,
